@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Рейсы">
+<title>✈️ Учёт рейсов</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card2: #334155;
+    --text: #f1f5f9;
+    --dim: #94a3b8;
+    --accent: #38bdf8;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+    --magenta: #d946ef;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    min-height: 100vh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  header {
+    background: var(--card);
+    padding: 16px 20px;
+    position: sticky; top: 0; z-index: 10;
+    border-bottom: 1px solid #000;
+    backdrop-filter: blur(10px);
+  }
+  header h1 { margin: 0; font-size: 20px; }
+  header .sub { color: var(--dim); font-size: 12px; margin-top: 2px; }
+  .container { padding: 16px; max-width: 640px; margin: 0 auto; }
+  .toolbar {
+    display: flex; gap: 8px; margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    flex: 1;
+    min-width: 80px;
+    padding: 12px 16px;
+    border: none; border-radius: 12px;
+    background: var(--card2); color: var(--text);
+    font-size: 15px; font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn:active { opacity: 0.7; }
+  .btn.primary { background: var(--accent); color: #0f172a; }
+  .btn.danger { background: var(--red); color: #fff; }
+  .search {
+    width: 100%; padding: 12px 16px;
+    border-radius: 12px; border: none;
+    background: var(--card); color: var(--text);
+    font-size: 16px; margin-bottom: 16px;
+  }
+  .search::placeholder { color: var(--dim); }
+  .flight {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px;
+  }
+  .flight .info { flex: 1; min-width: 0; }
+  .flight .num {
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .flight .dest {
+    color: var(--text); opacity: .9;
+    font-size: 15px; margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .flight .when {
+    color: var(--dim); font-size: 13px; margin-top: 4px;
+  }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .actions {
+    display: flex; gap: 6px;
+  }
+  .icon-btn {
+    width: 40px; height: 40px;
+    border-radius: 10px; border: none;
+    background: var(--card2); color: var(--text);
+    font-size: 16px; cursor: pointer;
+  }
+  .icon-btn:active { opacity: .7; }
+  .empty {
+    text-align: center; color: var(--dim);
+    padding: 40px 20px; font-size: 15px;
+  }
+  /* Модалка */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.6);
+    display: none; align-items: flex-end;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+  .overlay.open { display: flex; }
+  .sheet {
+    background: var(--card);
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    max-height: 90vh; overflow-y: auto;
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .sheet h2 { margin: 0 0 16px; font-size: 18px; }
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block; font-size: 13px;
+    color: var(--dim); margin-bottom: 6px;
+  }
+  .field input, .field select {
+    width: 100%; padding: 12px 14px;
+    border-radius: 10px; border: none;
+    background: var(--bg); color: var(--text);
+    font-size: 16px;
+  }
+  .row { display: flex; gap: 10px; }
+  .row .field { flex: 1; }
+  .sheet .buttons {
+    display: flex; gap: 10px; margin-top: 20px;
+  }
+  .sheet .buttons .btn { flex: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✈️ Учёт рейсов</h1>
+  <div class="sub" id="counter">0 рейсов</div>
+</header>
+
+<div class="container">
+  <div class="toolbar">
+    <button class="btn primary" onclick="openForm()">+ Добавить</button>
+  </div>
+  <input type="text" class="search" id="search" placeholder="🔍 Поиск по номеру или направлению" oninput="render()">
+  <div id="list"></div>
+</div>
+
+<!-- Форма добавления/редактирования -->
+<div class="overlay" id="overlay" onclick="if(event.target===this) closeForm()">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <h2 id="formTitle">Новый рейс</h2>
+    <div class="field">
+      <label>Номер рейса</label>
+      <input type="text" id="f-number" placeholder="SU-1234" autocapitalize="characters">
+    </div>
+    <div class="field">
+      <label>Пункт назначения</label>
+      <input type="text" id="f-destination" placeholder="Москва">
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Дата</label>
+        <input type="date" id="f-date">
+      </div>
+      <div class="field">
+        <label>Время</label>
+        <input type="time" id="f-time">
+      </div>
+    </div>
+    <div class="field">
+      <label>Статус</label>
+      <select id="f-status">
+        <option>Запланирован</option>
+        <option>В пути</option>
+        <option>Задержан</option>
+        <option>Отменён</option>
+        <option>Прибыл</option>
+      </select>
+    </div>
+    <div class="buttons">
+      <button class="btn" onclick="closeForm()">Отмена</button>
+      <button class="btn primary" onclick="saveFlight()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'flights_v1';
+let flights = [];
+let editingId = null;
+
+const STATUS_COLORS = {
+  'Запланирован': 'var(--accent)',
+  'В пути': 'var(--yellow)',
+  'Задержан': 'var(--magenta)',
+  'Отменён': 'var(--red)',
+  'Прибыл': 'var(--green)',
+};
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    flights = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    flights = [];
+  }
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(flights));
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+function render() {
+  const list = document.getElementById('list');
+  const query = document.getElementById('search').value.trim().toLowerCase();
+
+  let items = flights.slice().reverse(); // новые сверху
+  if (query) {
+    items = items.filter(f =>
+      f.number.toLowerCase().includes(query) ||
+      f.destination.toLowerCase().includes(query)
+    );
+  }
+
+  document.getElementById('counter').textContent =
+    flights.length === 0 ? 'Пока нет рейсов' :
+    `${flights.length} ${plural(flights.length, 'рейс', 'рейса', 'рейсов')}`;
+
+  if (items.length === 0) {
+    list.innerHTML = `<div class="empty">${
+      query ? '🔍 Ничего не найдено' : '🛫 Нет рейсов. Нажми «+ Добавить»'
+    }</div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(f => {
+    const color = STATUS_COLORS[f.status] || 'var(--dim)';
+    return `
+      <div class="flight">
+        <div class="info">
+          <div class="num">
+            <span class="dot" style="background:${color}"></span>
+            ${escapeHtml(f.number)}
+          </div>
+          <div class="dest">${escapeHtml(f.destination)}</div>
+          <div class="when">${formatDate(f.date)} ${f.time} · ${f.status}</div>
+        </div>
+        <div class="actions">
+          <button class="icon-btn" onclick="openForm('${f.id}')">✏️</button>
+          <button class="icon-btn" onclick="removeFlight('${f.id}')">🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function plural(n, one, few, many) {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+  return many;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function openForm(id = null) {
+  editingId = id;
+  const f = id ? flights.find(x => x.id === id) : null;
+
+  document.getElementById('formTitle').textContent = f ? 'Редактировать рейс' : 'Новый рейс';
+  document.getElementById('f-number').value = f ? f.number : '';
+  document.getElementById('f-destination').value = f ? f.destination : '';
+  document.getElementById('f-date').value = f ? f.date : new Date().toISOString().slice(0,10);
+  document.getElementById('f-time').value = f ? f.time : '12:00';
+  document.getElementById('f-status').value = f ? f.status : 'Запланирован';
+
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeForm() {
+  document.getElementById('overlay').classList.remove('open');
+  editingId = null;
+}
+
+function saveFlight() {
+  const number = document.getElementById('f-number').value.trim().toUpperCase();
+  const destination = document.getElementById('f-destination').value.trim();
+  const date = document.getElementById('f-date').value;
+  const time = document.getElementById('f-time').value;
+  const status = document.getElementById('f-status').value;
+
+  if (!number || !destination || !date || !time) {
+    alert('Заполни все поля');
+    return;
+  }
+
+  if (editingId) {
+    const f = flights.find(x => x.id === editingId);
+    Object.assign(f, { number, destination, date, time, status });
+  } else {
+    flights.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      number, destination, date, time, status
+    });
+  }
+
+  save();
+  closeForm();
+  render();
+}
+
+function removeFlight(id) {
+  const f = flights.find(x => x.id === id);
+  if (!f) return;
+  if (!confirm(`Удалить рейс ${f.number}?`)) return;
+  flights = flights.filter(x => x.id !== id);
+  save();
+  render();
+}
+
+// Инициализация
+load();
+render();
+</script>
+</body>
+</html>
