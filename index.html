@@ -164,6 +164,37 @@
   <div class="sheet" onclick="event.stopPropagation()">
     <h2 id="formTitle">Новый рейс</h2>
     <div class="field">
+      <label>Авиакомпания</label>
+      <select id="f-airline">
+        <option value="">Выбери авиакомпанию</option>
+        <option>Air Arabia (G9)</option>
+        <option>Air Arabia Abu Dhabi (3L)</option>
+        <option>Avia Traffic Company (YK)</option>
+        <option>AZAL / Azerbaijan Airlines (J2)</option>
+        <option>Azimuth (A4)</option>
+        <option>Belavia (B2)</option>
+        <option>Centrum Air (C6)</option>
+        <option>EgyptAir (MS)</option>
+        <option>EL AL (LY)</option>
+        <option>Emirates (EK)</option>
+        <option>Ethiopian Airlines (ET)</option>
+        <option>FlyOne Armenia (3F)</option>
+        <option>Jazeera Airways (J9)</option>
+        <option>NordStar (Y7)</option>
+        <option>Qanot Sharq (HH)</option>
+        <option>Royal Jordanian (RJ)</option>
+        <option>S7 Airlines (S7)</option>
+        <option>Северсталь (D2)</option>
+        <option>Sky FRU (R8)</option>
+        <option>Somon Air (SZ)</option>
+        <option>Turkmenistan Airlines (T5)</option>
+        <option>Уральские авиалинии (U6)</option>
+        <option>Uzbekistan Airways (HY)</option>
+        <option>Ямал (YC)</option>
+        <option>Другая авиакомпания</option>
+      </select>
+    </div>
+    <div class="field">
       <label>Номер рейса</label>
       <input type="text" id="f-number" placeholder="SU-1234" autocapitalize="characters">
     </div>
@@ -262,6 +293,7 @@ function render() {
             <span class="dot" style="background:${color}"></span>
             ${escapeHtml(f.number)}
           </div>
+          ${f.airline ? `<div class="when">${escapeHtml(f.airline)}</div>` : ''}
           <div class="dest">${escapeHtml(f.destination)}</div>
           <div class="when">${formatDate(f.date)} ${f.time} · ${f.status}</div>
         </div>
@@ -292,6 +324,7 @@ function openForm(id = null) {
   const f = id ? flights.find(x => x.id === id) : null;
 
   document.getElementById('formTitle').textContent = f ? 'Редактировать рейс' : 'Новый рейс';
+  document.getElementById('f-airline').value = f ? (f.airline || '') : '';
   document.getElementById('f-number').value = f ? f.number : '';
   document.getElementById('f-destination').value = f ? f.destination : '';
   document.getElementById('f-date').value = f ? f.date : new Date().toISOString().slice(0,10);
@@ -307,24 +340,25 @@ function closeForm() {
 }
 
 function saveFlight() {
+  const airline = document.getElementById('f-airline').value;
   const number = document.getElementById('f-number').value.trim().toUpperCase();
   const destination = document.getElementById('f-destination').value.trim();
   const date = document.getElementById('f-date').value;
   const time = document.getElementById('f-time').value;
   const status = document.getElementById('f-status').value;
 
-  if (!number || !destination || !date || !time) {
-    alert('Заполни все поля');
+  if (!airline || !number || !destination || !date || !time) {
+    alert('Выбери авиакомпанию и заполни остальные поля');
     return;
   }
 
   if (editingId) {
     const f = flights.find(x => x.id === editingId);
-    Object.assign(f, { number, destination, date, time, status });
+    Object.assign(f, { airline, number, destination, date, time, status });
   } else {
     flights.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      number, destination, date, time, status
+      airline, number, destination, date, time, status
     });
   }
 
