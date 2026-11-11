@@ -512,7 +512,7 @@ function importBackup(event) {
 
 function exportCSV() {
   const rows = [['Авиакомпания','Номер рейса','Направление','Дата','Время','Статус'], ...flights.map(f => [f.airline || '',f.number || '',f.destination || '',f.date || '',f.time || '',f.status || ''])];
-  const csv = '\\uFEFF' + rows.map(row => row.map(value => '"' + String(value).replace(/"/g,'""') + '"').join(';')).join('\\r\\n');
+  const csv = '\uFEFF' + rows.map(row => row.map(value => '"' + String(value).replace(/"/g,'""') + '"').join(';')).join('\r\n');
   downloadFile(csv, 'dme-flights-' + localDateISO() + '.csv', 'text/csv;charset=utf-8');
 }
 
@@ -544,7 +544,7 @@ const AIRLINE_DOMAINS = {
 };
 
 function getAirlineCode(name) {
-  const match = String(name).match(/\\(([A-Z0-9]{2})\\)/);
+  const match = String(name).match(/\(([A-Z0-9]{2})\)/);
   return match ? match[1] : '✈';
 }
 
