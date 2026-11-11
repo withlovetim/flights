@@ -442,6 +442,7 @@ function render() {
   const list = document.getElementById('list');
   if (activeTab === 'phones') { renderPhones(); return; }
   if (activeTab === 'settings') { renderSettings(); return; }
+  list.innerHTML = '';
 
   document.getElementById('counter').textContent = flights.length === 0 ? 'Пока нет рейсов' :
     `${flights.length} ${plural(flights.length, 'рейс', 'рейса', 'рейсов')}`;
