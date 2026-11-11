@@ -72,6 +72,21 @@
     gap: 12px;
   }
   .flight .info { flex: 1; min-width: 0; }
+  .airline-line {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--dim); font-size: 13px; margin-top: 5px;
+  }
+  .airline-logo {
+    width: 30px; height: 30px; border-radius: 8px;
+    object-fit: contain; background: #fff; padding: 3px;
+    flex-shrink: 0;
+  }
+  .airline-fallback {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--card2); color: var(--text);
+    font-size: 10px; font-weight: 800; flex-shrink: 0;
+  }
   .flight .num {
     font-weight: 700; font-size: 17px;
     display: flex; align-items: center; gap: 8px;
@@ -293,7 +308,7 @@ function render() {
             <span class="dot" style="background:${color}"></span>
             ${escapeHtml(f.number)}
           </div>
-          ${f.airline ? `<div class="when">${escapeHtml(f.airline)}</div>` : ''}
+          ${f.airline ? (() => { const logo = getAirlineLogo(f.airline); return `<div class="airline-line"><img class="airline-logo" src="${logo}" alt="" onerror="this.outerHTML='<span class=\\'airline-fallback\\'>${escapeHtml(getAirlineCode(f.airline))}</span>'"><span>${escapeHtml(f.airline)}</span></div>`; })() : ''}
           <div class="dest">${escapeHtml(f.destination)}</div>
           <div class="when">${formatDate(f.date)} ${f.time} · ${f.status}</div>
         </div>
@@ -304,6 +319,45 @@ function render() {
       </div>
     `;
   }).join('');
+}
+
+const AIRLINE_DOMAINS = {
+  'Air Arabia (G9)': 'airarabia.com',
+  'Air Arabia Abu Dhabi (3L)': 'airarabia.com',
+  'Avia Traffic Company (YK)': 'asiatraffic.com',
+  'AZAL / Azerbaijan Airlines (J2)': ' azal.az'.trim(),
+  'Azimuth (A4)': 'azimuth.ru',
+  'Belavia (B2)': 'belavia.by',
+  'Centrum Air (C6)': 'centrum-air.com',
+  'EgyptAir (MS)': 'egyptair.com',
+  'EL AL (LY)': 'elal.com',
+  'Emirates (EK)': 'emirates.com',
+  'Ethiopian Airlines (ET)': 'ethiopianairlines.com',
+  'FlyOne Armenia (3F)': 'flyone.eu',
+  'Jazeera Airways (J9)': 'jazeeraairways.com',
+  'NordStar (Y7)': 'nordstar.ru',
+  'Qanot Sharq (HH)': 'qanotsharq.com',
+  'Royal Jordanian (RJ)': 'rj.com',
+  'S7 Airlines (S7)': 's7.ru',
+  'Северсталь (D2)': 'severstal-avia.ru',
+  'Sky FRU (R8)': 'skyfru.com',
+  'Somon Air (SZ)': 'somonair.com',
+  'Turkmenistan Airlines (T5)': 'turkmenistanairlines.tm',
+  'Уральские авиалинии (U6)': 'uralairlines.ru',
+  'Uzbekistan Airways (HY)': ' uzairways.com'.trim(),
+  'Ямал (YC)': 'yamal-airlines.ru'
+};
+
+function getAirlineCode(name) {
+  const match = String(name).match(/\\(([A-Z0-9]{2})\\)/);
+  return match ? match[1] : '✈';
+}
+
+function getAirlineLogo(name) {
+  const domain = AIRLINE_DOMAINS[name];
+  return domain
+    ? 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domain) + '&sz=128'
+    : '';
 }
 
 function plural(n, one, few, many) {
