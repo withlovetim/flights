@@ -348,7 +348,7 @@ function renderPhones() {
       <div class="phone-card">
         <div class="phone-name">${escapeHtml(item.name)}</div>
         <div class="phone-numbers">${item.numbers.map(number => {
-          const tel = number.replace(/[^+\\d]/g, '');
+          const tel = number.replace(/[^+\d]/g, '');
           return `<a class="phone-number" href="tel:${tel}">${escapeHtml(number)}</a>`;
         }).join('')}</div>
       </div>
