@@ -72,6 +72,13 @@
     box-shadow: 0 2px 8px rgba(25,65,91,.04);
   }
   .search::placeholder { color: var(--dim); }
+  .tab-btn { flex: 1; min-width: 90px; }
+  .tab-btn.active { background: linear-gradient(110deg, #087db5, #079b91); color: #fff; }
+  .phone-group-title { margin: 20px 2px 9px; color: var(--dim); font-size: 12px; font-weight: 800; letter-spacing: .9px; text-transform: uppercase; }
+  .phone-card { background: var(--card); border: 1px solid #e0eaf0; border-radius: 14px; padding: 13px 15px; margin-bottom: 9px; box-shadow: 0 3px 12px rgba(25,65,91,.045); }
+  .phone-name { font-weight: 650; font-size: 15px; margin-bottom: 8px; }
+  .phone-numbers { display: flex; flex-wrap: wrap; gap: 8px; }
+  .phone-number { display: inline-flex; align-items: center; border-radius: 9px; padding: 8px 11px; background: #eaf3f7; color: #0875a7; font-weight: 750; font-size: 15px; text-decoration: none; }
   .flight {
     background: var(--card);
     border: 1px solid #e0eaf0;
@@ -186,7 +193,9 @@
 
 <div class="container">
   <div class="toolbar">
-    <button class="btn primary" onclick="openForm()">+ Добавить</button>
+    <button class="btn tab-btn active" id="tabFlights" onclick="switchTab('flights')">Рейсы</button>
+    <button class="btn tab-btn" id="tabPhones" onclick="switchTab('phones')">Телефоны</button>
+    <button class="btn primary" id="addFlightBtn" onclick="openForm()">+ Добавить рейс</button>
   </div>
   <input type="text" class="search" id="search" placeholder="🔍 Поиск по номеру или направлению" oninput="render()">
   <div id="list"></div>
@@ -266,6 +275,38 @@
 const STORAGE_KEY = 'flights_v1';
 let flights = [];
 let editingId = null;
+let activeTab = 'flights';
+
+const PHONE_GROUPS = [
+  { title: 'Службы аэропорта', items: [
+    { name: 'Коммутатор', numbers: ['+7 (495) 967-83-63'] },
+    { name: 'DCS', numbers: ['12983', '12972'] },
+    { name: 'Диспетчер регистрации', numbers: ['12906'] },
+    { name: 'Диспетчер посадки — ВВЛ', numbers: ['10538'] },
+    { name: 'Диспетчер посадки — МВЛ', numbers: ['10538'] },
+    { name: 'Центровка', numbers: ['12928'] },
+    { name: 'Сопровождение маломобильных', numbers: ['12957'] },
+    { name: 'Сопровождение UMNR CREW', numbers: ['51811'] },
+    { name: 'Загрузка Россия', numbers: ['50212', '50497'] },
+    { name: 'Загрузка междугородка', numbers: ['50483'] },
+    { name: 'Планирование стоек (вкл./выкл.)', numbers: ['12925'] },
+    { name: 'Диспетчер автобусов', numbers: ['12995'] },
+    { name: 'Расстановка', numbers: ['13949'] },
+    { name: 'Трансфер', numbers: ['35099'] },
+    { name: 'Бизнес ВВЛ', numbers: ['20817'] },
+    { name: 'Бизнес ТИ', numbers: ['20808'] },
+    { name: 'Негабарит МВЛ', numbers: ['12608'] },
+    { name: 'Негабарит ВВЛ', numbers: ['12496'] },
+    { name: 'Бесхоз', numbers: ['26175'] },
+    { name: 'Медики', numbers: ['51533'] },
+    { name: 'Бизнес-зал', numbers: ['50945'] },
+    { name: 'Бизнес-зал «Горизонт»', numbers: ['50958'] }
+  ]},
+  { title: 'Представительства авиакомпаний', items: [
+    { name: 'Ямал', numbers: ['26658'] },
+    { name: 'Нордстар', numbers: ['89262093625'] }
+  ]}
+];
 
 const STATUS_COLORS = {
   'Запланирован': 'var(--accent)',
@@ -274,6 +315,46 @@ const STATUS_COLORS = {
   'Отменён': 'var(--red)',
   'Прибыл': 'var(--green)',
 };
+
+function switchTab(tab) {
+  activeTab = tab;
+  const flightsTab = document.getElementById('tabFlights');
+  const phonesTab = document.getElementById('tabPhones');
+  flightsTab.classList.toggle('active', tab === 'flights');
+  phonesTab.classList.toggle('active', tab === 'phones');
+  document.getElementById('addFlightBtn').style.display = tab === 'flights' ? '' : 'none';
+  const search = document.getElementById('search');
+  search.value = '';
+  search.placeholder = tab === 'phones' ? '🔍 Поиск по службе или номеру телефона' : '🔍 Поиск по номеру или направлению';
+  render();
+}
+
+function renderPhones() {
+  const list = document.getElementById('list');
+  const query = document.getElementById('search').value.trim().toLowerCase();
+  const groups = PHONE_GROUPS.map(group => ({
+    title: group.title,
+    items: group.items.filter(item =>
+      (item.name + ' ' + item.numbers.join(' ')).toLowerCase().includes(query)
+    )
+  })).filter(group => group.items.length);
+  if (!groups.length) {
+    list.innerHTML = '<div class="empty">🔍 Ничего не найдено</div>';
+    return;
+  }
+  list.innerHTML = groups.map(group => `
+    <div class="phone-group-title">${escapeHtml(group.title)}</div>
+    ${group.items.map(item => `
+      <div class="phone-card">
+        <div class="phone-name">${escapeHtml(item.name)}</div>
+        <div class="phone-numbers">${item.numbers.map(number => {
+          const tel = number.replace(/[^+\\d]/g, '');
+          return `<a class="phone-number" href="tel:${tel}">${escapeHtml(number)}</a>`;
+        }).join('')}</div>
+      </div>
+    `).join('')}
+  `).join('');
+}
 
 function load() {
   try {
@@ -295,6 +376,7 @@ function formatDate(iso) {
 }
 
 function render() {
+  if (activeTab === 'phones') { renderPhones(); return; }
   const list = document.getElementById('list');
   const query = document.getElementById('search').value.trim().toLowerCase();
 
