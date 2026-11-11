@@ -6,19 +6,19 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Рейсы">
-<title>✈️ Учёт рейсов</title>
+<title>DME — Мои рейсы</title>
 <style>
   :root {
-    --bg: #0f172a;
-    --card: #1e293b;
-    --card2: #334155;
-    --text: #f1f5f9;
-    --dim: #94a3b8;
-    --accent: #38bdf8;
-    --green: #22c55e;
-    --red: #ef4444;
-    --yellow: #eab308;
-    --magenta: #d946ef;
+    --bg: #eef4f7;
+    --card: #ffffff;
+    --card2: #e3edf2;
+    --text: #17324d;
+    --dim: #688096;
+    --accent: #087db5;
+    --green: #159b79;
+    --red: #dc4c55;
+    --yellow: #d99b22;
+    --magenta: #a65ac4;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -30,14 +30,22 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
   header {
-    background: var(--card);
-    padding: 16px 20px;
+    background: linear-gradient(115deg, #06466f 0%, #087db5 65%, #079b91 100%);
+    color: #fff;
+    padding: 17px 20px;
     position: sticky; top: 0; z-index: 10;
-    border-bottom: 1px solid #000;
-    backdrop-filter: blur(10px);
+    box-shadow: 0 5px 18px rgba(6, 55, 87, .18);
   }
-  header h1 { margin: 0; font-size: 20px; }
-  header .sub { color: var(--dim); font-size: 12px; margin-top: 2px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.28);
+    font-size: 20px; font-weight: 900; letter-spacing: -1px;
+  }
+  header h1 { margin: 0; font-size: 21px; letter-spacing: .5px; }
+  header .sub { color: rgba(255,255,255,.78); font-size: 11px; margin-top: 3px; letter-spacing: 1.1px; }
   .container { padding: 16px; max-width: 640px; margin: 0 auto; }
   .toolbar {
     display: flex; gap: 8px; margin-bottom: 16px;
@@ -54,22 +62,25 @@
     transition: opacity .15s;
   }
   .btn:active { opacity: 0.7; }
-  .btn.primary { background: var(--accent); color: #0f172a; }
+  .btn.primary { background: linear-gradient(110deg, #087db5, #079b91); color: #fff; box-shadow: 0 4px 10px rgba(8,125,181,.18); }
   .btn.danger { background: var(--red); color: #fff; }
   .search {
-    width: 100%; padding: 12px 16px;
-    border-radius: 12px; border: none;
+    width: 100%; padding: 13px 16px;
+    border-radius: 12px; border: 1px solid #dce8ee;
     background: var(--card); color: var(--text);
     font-size: 16px; margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(25,65,91,.04);
   }
   .search::placeholder { color: var(--dim); }
   .flight {
     background: var(--card);
-    border-radius: 14px;
+    border: 1px solid #e0eaf0;
+    border-radius: 16px;
     padding: 14px 16px;
-    margin-bottom: 10px;
+    margin-bottom: 11px;
     display: flex; justify-content: space-between; align-items: center;
     gap: 12px;
+    box-shadow: 0 3px 12px rgba(25,65,91,.055);
   }
   .flight .info { flex: 1; min-width: 0; }
   .airline-line {
@@ -109,7 +120,7 @@
   .icon-btn {
     width: 40px; height: 40px;
     border-radius: 10px; border: none;
-    background: var(--card2); color: var(--text);
+    background: #eaf2f6; color: var(--text);
     font-size: 16px; cursor: pointer;
   }
   .icon-btn:active { opacity: .7; }
@@ -148,7 +159,8 @@
   .field input, .field select {
     width: 100%; padding: 12px 14px;
     border-radius: 10px; border: none;
-    background: var(--bg); color: var(--text);
+    background: #f1f6f8; color: var(--text);
+    border: 1px solid #e0eaf0;
     font-size: 16px;
   }
   .row { display: flex; gap: 10px; }
@@ -162,8 +174,14 @@
 <body>
 
 <header>
-  <h1>✈️ Учёт рейсов</h1>
-  <div class="sub" id="counter">0 рейсов</div>
+  <div class="brand">
+    <div class="brand-mark">DME</div>
+    <div>
+      <h1>МОИ РЕЙСЫ</h1>
+      <div class="sub">DOMODEDOVO · FLIGHT LOG</div>
+      <div class="sub" id="counter">0 рейсов</div>
+    </div>
+  </div>
 </header>
 
 <div class="container">
