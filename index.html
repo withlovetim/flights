@@ -265,8 +265,25 @@
         <input type="date" id="f-date">
       </div>
       <div class="field">
-        <label>Время</label>
+        <label>Время рейса</label>
         <input type="time" id="f-time">
+      </div>
+    </div>
+    <div class="field">
+      <label>Тип задачи</label>
+      <select id="f-task-type">
+        <option value="Регистрация">Регистрация</option>
+        <option value="Посадка">Посадка</option>
+      </select>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Начало задачи</label>
+        <input type="time" id="f-task-start">
+      </div>
+      <div class="field">
+        <label>Окончание задачи</label>
+        <input type="time" id="f-task-end">
       </div>
     </div>
     <div class="field">
@@ -399,7 +416,8 @@ function renderFlightCard(f) {
         <div class="num"><span class="dot" style="background:${color}"></span>${escapeHtml(f.number)}</div>
         ${f.airline ? (() => { const logo = getAirlineLogo(f.airline); return logo ? `<div class="airline-line"><img class="airline-logo" src="${logo}" alt="" onerror="this.outerHTML='<span class=\\'airline-fallback\\'>${escapeHtml(getAirlineCode(f.airline))}</span>'"><span>${escapeHtml(f.airline)}</span></div>` : `<div class="airline-line"><span class="airline-fallback">${escapeHtml(getAirlineCode(f.airline))}</span><span>${escapeHtml(f.airline)}</span></div>`; })() : ''}
         <div class="dest">${escapeHtml(f.destination)}</div>
-        <div class="when">${formatDate(f.date)} ${escapeHtml(f.time || '')} · ${escapeHtml(f.status || '')}</div>
+        <div class="when">${formatDate(f.date)} · Рейс: ${escapeHtml(f.time || '—')} · ${escapeHtml(f.status || '')}</div>
+        <div class="when">Задача: <strong>${escapeHtml(f.taskType || 'Регистрация')}</strong> · ${escapeHtml(f.taskStart || '—')}–${escapeHtml(f.taskEnd || '—')}</div>
       </div>
       <div class="actions">
         <button class="icon-btn" onclick="openForm('${f.id}')" aria-label="Редактировать">✏️</button>
@@ -511,7 +529,7 @@ function importBackup(event) {
 }
 
 function exportCSV() {
-  const rows = [['Авиакомпания','Номер рейса','Направление','Дата','Время','Статус'], ...flights.map(f => [f.airline || '',f.number || '',f.destination || '',f.date || '',f.time || '',f.status || ''])];
+  const rows = [['Авиакомпания','Номер рейса','Направление','Дата','Время рейса','Тип задачи','Начало задачи','Окончание задачи','Статус'], ...flights.map(f => [f.airline || '',f.number || '',f.destination || '',f.date || '',f.time || '',f.taskType || 'Регистрация',f.taskStart || '',f.taskEnd || '',f.status || ''])];
   const csv = '\uFEFF' + rows.map(row => row.map(value => '"' + String(value).replace(/"/g,'""') + '"').join(';')).join('\r\n');
   downloadFile(csv, 'dme-flights-' + localDateISO() + '.csv', 'text/csv;charset=utf-8');
 }
@@ -577,7 +595,10 @@ function openForm(id = null) {
   document.getElementById('f-number').value = f ? f.number : '';
   document.getElementById('f-destination').value = f ? f.destination : '';
   document.getElementById('f-date').value = f ? f.date : new Date().toISOString().slice(0,10);
-  document.getElementById('f-time').value = f ? f.time : '12:00';
+  document.getElementById('f-time').value = f ? (f.time || '') : '12:00';
+  document.getElementById('f-task-type').value = f ? (f.taskType || 'Регистрация') : 'Регистрация';
+  document.getElementById('f-task-start').value = f ? (f.taskStart || '') : '';
+  document.getElementById('f-task-end').value = f ? (f.taskEnd || '') : '';
   document.getElementById('f-status').value = f ? f.status : 'Запланирован';
 
   document.getElementById('overlay').classList.add('open');
@@ -594,20 +615,28 @@ function saveFlight() {
   const destination = document.getElementById('f-destination').value.trim();
   const date = document.getElementById('f-date').value;
   const time = document.getElementById('f-time').value;
+  const taskType = document.getElementById('f-task-type').value;
+  const taskStart = document.getElementById('f-task-start').value;
+  const taskEnd = document.getElementById('f-task-end').value;
   const status = document.getElementById('f-status').value;
 
-  if (!airline || !number || !destination || !date || !time) {
-    alert('Выбери авиакомпанию и заполни остальные поля');
+  if (!airline || !number || !destination || !date || !time || !taskStart || !taskEnd) {
+    alert('Заполни авиакомпанию, рейс, дату, время рейса и время начала и окончания задачи');
+    return;
+  }
+
+  if (taskEnd < taskStart) {
+    alert('Время окончания задачи не может быть раньше времени начала.');
     return;
   }
 
   if (editingId) {
     const f = flights.find(x => x.id === editingId);
-    Object.assign(f, { airline, number, destination, date, time, status });
+    Object.assign(f, { airline, number, destination, date, time, taskType, taskStart, taskEnd, status });
   } else {
     flights.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      airline, number, destination, date, time, status
+      airline, number, destination, date, time, taskType, taskStart, taskEnd, status
     });
   }
 
