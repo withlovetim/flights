@@ -344,7 +344,7 @@
       </div>
       <div class="field">
         <label>Время рейса</label>
-        <input type="time" id="f-time">
+        <input type="time" id="f-time" onchange="suggestTaskTimes()">
       </div>
     </div>
     <div class="field">
@@ -809,28 +809,9 @@ function escapeHtml(s) {
 
 const ROUTE_CATALOG_KEY = 'dme_route_catalog_custom_v1';
 const DME_ROUTE_SEED = {
-  'Air Arabia (G9)': [['G9 805','Шарджа']],
-  'Avia Traffic Company (YK)': [['YK 965','Ош']],
-  'AZAL / Azerbaijan Airlines (J2)': [['J2 181','Баку'],['J2 186','Баку']],
-  'Belavia (B2)': [['B2 957','Минск'],['B2 955','Минск']],
-  'EgyptAir (MS)': [['MS 729','Каир'],['MS 727','Шарм-эль-Шейх'],['MS 728','Хургада']],
-  'Emirates (EK)': [['EK 129','Дубай'],['EK 133','Дубай']],
-  'Ethiopian Airlines (ET)': [['ET 760','Аддис-Абеба']],
-  'FlyOne Armenia (3F)': [['3F 3315','Ереван']],
-  'NordStar (Y7)': [['Y7 104','Норильск']],
-  'Qanot Sharq (HH)': [['HH 703','Фергана'],['HH 709','Бухара'],['HH 716','Ташкент'],['HH 707','Ташкент']],
-  'Северсталь (D2)': [['D2 255','Череповец']],
-  'Sky FRU (R8)': [['R8 483','Бишкек']],
-  'Uzbekistan Airways (HY)': [['HY 603','Ташкент']],
-  'Ямал (YC)': [['YC 174','Надым'],['YC 90','Новый Уренгой'],['YC 32','Салехард']],
-  'Air Arabia Abu Dhabi (3L)': [],
-  'Azimuth (A4)': [],
-  'Centrum Air (C6)': [],
-  'EL AL (LY)': [],
-  'Jazeera Airways (J9)': [],
-  'Royal Jordanian (RJ)': [],
-  'Somon Air (SZ)': [],
-  'Turkmenistan Airlines (T5)': []
+  // Проверенное расписание вылетов из DME на зимний сезон 25.10.2026–27.03.2027.
+  // Время местное, по официальному расписанию аэропорта.
+  'Emirates (EK)': [['EK 130','Дубай','09:55'],['EK 132','Дубай','21:45'],['EK 134','Дубай','16:25']]
 };
 let customDmeRoutes = [];
 
@@ -862,8 +843,8 @@ function loadAirlineRoutes() {
   select.innerHTML = '<option value="">Выбери рейс или введи вручную</option>';
   merged.forEach(route => {
     const option = document.createElement('option');
-    option.value = route[0] + '|' + route[1];
-    option.textContent = route[0] + ' — ' + route[1];
+    option.value = route[0] + '|' + route[1] + '|' + (route[2] || '');
+    option.textContent = route[0] + ' — ' + route[1] + (route[2] ? ' · ' + route[2] : '');
     select.appendChild(option);
   });
 }
@@ -873,7 +854,24 @@ function selectKnownRoute() {
   if (!value) return;
   const parts = value.split('|');
   document.getElementById('f-number').value = parts[0] || '';
-  document.getElementById('f-destination').value = parts.slice(1).join('|') || '';
+  document.getElementById('f-destination').value = parts[1] || '';
+  if (parts[2]) {
+    document.getElementById('f-time').value = parts[2];
+    suggestTaskTimes();
+  }
+}
+
+function suggestTaskTimes() {
+  const flightTime = document.getElementById('f-time').value;
+  if (!flightTime) return;
+  const parts = flightTime.split(':').map(Number);
+  const total = parts[0] * 60 + parts[1];
+  const format = value => {
+    const minutes = (value + 1440) % 1440;
+    return String(Math.floor(minutes / 60)).padStart(2,'0') + ':' + String(minutes % 60).padStart(2,'0');
+  };
+  document.getElementById('f-task-start').value = format(total - 120);
+  document.getElementById('f-task-end').value = format(total - 60);
 }
 
 function saveCustomDmeRoute(airline, number, destination) {
@@ -902,6 +900,7 @@ function openForm(id = null) {
   document.getElementById('f-task-type').value = f ? (f.taskType || 'Регистрация') : 'Регистрация';
   document.getElementById('f-task-start').value = f ? (f.taskStart || '') : '';
   document.getElementById('f-task-end').value = f ? (f.taskEnd || '') : '';
+  if (!f) suggestTaskTimes();
 
   document.getElementById('overlay').classList.add('open');
 }
