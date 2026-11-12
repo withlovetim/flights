@@ -561,6 +561,7 @@ async function createVault() {
   vaultKey = await deriveVaultKey(pass, salt); vaultRecords = [];
   localStorage.setItem(VAULT_KEY, JSON.stringify({version:1,salt:bytesToBase64(salt),iv:'',data:''}));
   await persistVault(); render();
+  document.getElementById('addPasswordBtn').style.display = '';
 }
 async function unlockVault() {
   const pass = document.getElementById('vault-pass').value;
