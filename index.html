@@ -293,7 +293,7 @@
     <h2 id="formTitle">Новый рейс</h2>
     <div class="field">
       <label>Авиакомпания</label>
-      <select id="f-airline">
+      <select id="f-airline" onchange="loadAirlineRoutes()">
         <option value="">Выбери авиакомпанию</option>
         <option>Air Arabia (G9)</option>
         <option>Air Arabia Abu Dhabi (3L)</option>
@@ -321,6 +321,13 @@
         <option>Ямал (YC)</option>
         <option>Другая авиакомпания</option>
       </select>
+    </div>
+    <div class="field" id="route-picker-field" style="display:none">
+      <label>Рейс из справочника DME</label>
+      <select id="f-route" onchange="selectKnownRoute()">
+        <option value="">Выбери рейс или введи вручную</option>
+      </select>
+      <small style="display:block;color:var(--muted);margin-top:6px">Если рейса нет в списке, заполни номер и направление вручную. Новый рейс сохранится в справочнике.</small>
     </div>
     <div class="field">
       <label>Номер рейса</label>
@@ -800,12 +807,94 @@ function escapeHtml(s) {
   }[c]));
 }
 
+const ROUTE_CATALOG_KEY = 'dme_route_catalog_custom_v1';
+const DME_ROUTE_SEED = {
+  'Air Arabia (G9)': [['G9 805','Шарджа']],
+  'Avia Traffic Company (YK)': [['YK 965','Ош']],
+  'AZAL / Azerbaijan Airlines (J2)': [['J2 181','Баку'],['J2 186','Баку']],
+  'Belavia (B2)': [['B2 957','Минск'],['B2 955','Минск']],
+  'EgyptAir (MS)': [['MS 729','Каир'],['MS 727','Шарм-эль-Шейх'],['MS 728','Хургада']],
+  'Emirates (EK)': [['EK 129','Дубай'],['EK 133','Дубай']],
+  'Ethiopian Airlines (ET)': [['ET 760','Аддис-Абеба']],
+  'FlyOne Armenia (3F)': [['3F 3315','Ереван']],
+  'NordStar (Y7)': [['Y7 104','Норильск']],
+  'Qanot Sharq (HH)': [['HH 703','Фергана'],['HH 709','Бухара'],['HH 716','Ташкент'],['HH 707','Ташкент']],
+  'Северсталь (D2)': [['D2 255','Череповец']],
+  'Sky FRU (R8)': [['R8 483','Бишкек']],
+  'Uzbekistan Airways (HY)': [['HY 603','Ташкент']],
+  'Ямал (YC)': [['YC 174','Надым'],['YC 90','Новый Уренгой'],['YC 32','Салехард']],
+  'Air Arabia Abu Dhabi (3L)': [],
+  'Azimuth (A4)': [],
+  'Centrum Air (C6)': [],
+  'EL AL (LY)': [],
+  'Jazeera Airways (J9)': [],
+  'Royal Jordanian (RJ)': [],
+  'Somon Air (SZ)': [],
+  'Turkmenistan Airlines (T5)': []
+};
+let customDmeRoutes = [];
+
+function loadCustomDmeRoutes() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ROUTE_CATALOG_KEY) || '[]');
+    customDmeRoutes = Array.isArray(saved) ? saved : [];
+  } catch (e) {
+    customDmeRoutes = [];
+  }
+}
+
+function loadAirlineRoutes() {
+  const airline = document.getElementById('f-airline').value;
+  const field = document.getElementById('route-picker-field');
+  const select = document.getElementById('f-route');
+  const excluded = airline.includes('(S7)') || airline.includes('(U6)');
+  if (!airline || excluded) {
+    field.style.display = 'none';
+    select.innerHTML = '<option value="">Выбери рейс или введи вручную</option>';
+    return;
+  }
+  field.style.display = 'block';
+  const seeded = DME_ROUTE_SEED[airline] || [];
+  const custom = customDmeRoutes.filter(x => x.airline === airline).map(x => [x.number, x.destination]);
+  const merged = seeded.concat(custom).filter((route, index, arr) =>
+    arr.findIndex(x => x[0].toUpperCase() === route[0].toUpperCase()) === index
+  );
+  select.innerHTML = '<option value="">Выбери рейс или введи вручную</option>';
+  merged.forEach(route => {
+    const option = document.createElement('option');
+    option.value = route[0] + '|' + route[1];
+    option.textContent = route[0] + ' — ' + route[1];
+    select.appendChild(option);
+  });
+}
+
+function selectKnownRoute() {
+  const value = document.getElementById('f-route').value;
+  if (!value) return;
+  const parts = value.split('|');
+  document.getElementById('f-number').value = parts[0] || '';
+  document.getElementById('f-destination').value = parts.slice(1).join('|') || '';
+}
+
+function saveCustomDmeRoute(airline, number, destination) {
+  if (!airline || airline.includes('(S7)') || airline.includes('(U6)')) return;
+  const exists = customDmeRoutes.some(x =>
+    x.airline === airline && x.number.toUpperCase() === number.toUpperCase()
+  );
+  if (!exists) {
+    customDmeRoutes.push({ airline, number, destination });
+    localStorage.setItem(ROUTE_CATALOG_KEY, JSON.stringify(customDmeRoutes));
+  }
+}
+
 function openForm(id = null) {
   editingId = id;
   const f = id ? flights.find(x => x.id === id) : null;
 
   document.getElementById('formTitle').textContent = f ? 'Редактировать рейс' : 'Новый рейс';
   document.getElementById('f-airline').value = f ? (f.airline || '') : '';
+  loadAirlineRoutes();
+  document.getElementById('f-route').value = '';
   document.getElementById('f-number').value = f ? f.number : '';
   document.getElementById('f-destination').value = f ? f.destination : '';
   document.getElementById('f-date').value = f ? f.date : new Date().toISOString().slice(0,10);
@@ -842,6 +931,8 @@ function saveFlight() {
     return;
   }
 
+  saveCustomDmeRoute(airline, number, destination);
+
   if (editingId) {
     const f = flights.find(x => x.id === editingId);
     Object.assign(f, { airline, number, destination, date, time, taskType, taskStart, taskEnd });
@@ -869,6 +960,7 @@ function removeFlight(id) {
 // Инициализация
 load();
 loadVault();
+loadCustomDmeRoutes();
 scheduleDate = localDateISO();
 render();
 </script>
