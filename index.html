@@ -988,11 +988,11 @@ function saveFlight() {
 
   if (editingId) {
     const f = flights.find(x => x.id === editingId);
-      airline, number, destination, date, time, taskType, taskStart, taskEnd, checkinCounters, gates, aircraftStand
+    Object.assign(f, { airline, number, destination, date, time, taskType, taskStart, taskEnd, checkinCounters, gates, aircraftStand });
   } else {
     flights.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      airline, number, destination, date, time, taskType, taskStart, taskEnd
+      airline, number, destination, date, time, taskType, taskStart, taskEnd, checkinCounters, gates, aircraftStand
     });
   }
 
