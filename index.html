@@ -75,10 +75,26 @@
   .tab-btn { flex: 1; min-width: 90px; }
   .tab-btn.active { background: linear-gradient(110deg, #087db5, #079b91); color: #fff; }
   body { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
-  .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.96); border-top: 1px solid #dce8ee; box-shadow: 0 -5px 20px rgba(25,65,91,.08); backdrop-filter: blur(14px); }
+  .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5,1fr); gap: 4px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.96); border-top: 1px solid #dce8ee; box-shadow: 0 -5px 20px rgba(25,65,91,.08); backdrop-filter: blur(14px); }
   .nav-btn { border: 0; background: transparent; color: var(--dim); border-radius: 12px; min-height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
   .nav-btn .nav-icon { font-size: 20px; line-height: 1.1; }
   .nav-btn.active { color: #087db5; background: #eaf4f8; }
+  .password-card { background:var(--card); border:1px solid #e0eaf0; border-radius:15px; padding:14px; margin-bottom:10px; box-shadow:0 3px 12px rgba(25,65,91,.045); }
+  .password-card .pw-top { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+  .password-card h3 { margin:0 0 5px; font-size:16px; }
+  .password-card p { margin:4px 0; color:var(--dim); font-size:13px; overflow-wrap:anywhere; }
+  .pw-actions { display:flex; gap:6px; }
+  .pw-actions .icon-btn { width:36px; height:36px; }
+  .password-value { display:flex; align-items:center; gap:8px; margin-top:10px; }
+  .password-value code { flex:1; overflow-wrap:anywhere; background:#f1f6f8; padding:9px; border-radius:8px; font-size:14px; }
+  .security-note { background:#fff8e8; border:1px solid #f0dfb5; color:#765719; border-radius:12px; padding:12px; font-size:12px; line-height:1.45; margin-bottom:14px; }
+  .vault-panel { background:var(--card); border:1px solid #e0eaf0; border-radius:16px; padding:18px; }
+  .vault-panel h3 { margin:0 0 8px; }
+  .vault-panel p { color:var(--dim); font-size:13px; line-height:1.45; }
+  .vault-panel input, .password-field input, .password-field select, .password-field textarea { width:100%; padding:12px 14px; border-radius:10px; border:1px solid #e0eaf0; background:#f1f6f8; color:var(--text); font:inherit; font-size:16px; }
+  .password-field { margin-bottom:12px; }
+  .password-field label { display:block; font-size:13px; color:var(--dim); margin-bottom:6px; }
+  .password-field textarea { min-height:70px; resize:vertical; }
   .section-heading { font-size: 19px; font-weight: 800; margin: 4px 0 14px; }
   .settings-card { background: var(--card); border: 1px solid #e0eaf0; border-radius: 15px; padding: 16px; margin-bottom: 12px; box-shadow: 0 3px 12px rgba(25,65,91,.045); }
   .settings-card h3 { margin: 0 0 7px; font-size: 16px; }
@@ -225,6 +241,7 @@
 <div class="container">
   <div class="toolbar" id="pageToolbar">
     <button class="btn primary" id="addFlightBtn" onclick="openForm()">+ Добавить рейс</button>
+    <button class="btn primary" id="addPasswordBtn" style="display:none" onclick="openPasswordForm()">+ Добавить пароль</button>
   </div>
   <input type="text" class="search" id="search" placeholder="🔍 Поиск по номеру или направлению" oninput="render()">
   <div id="list"></div>
@@ -234,8 +251,23 @@
   <button class="nav-btn active" data-tab="flights" onclick="switchTab('flights')"><span class="nav-icon">✈️</span><span>Рейсы</span></button>
   <button class="nav-btn" data-tab="schedule" onclick="switchTab('schedule')"><span class="nav-icon">🗓️</span><span>Расписание</span></button>
   <button class="nav-btn" data-tab="phones" onclick="switchTab('phones')"><span class="nav-icon">☎️</span><span>Телефоны</span></button>
+  <button class="nav-btn" data-tab="passwords" onclick="switchTab('passwords')"><span class="nav-icon">🔐</span><span>Пароли</span></button>
   <button class="nav-btn" data-tab="settings" onclick="switchTab('settings')"><span class="nav-icon">⚙️</span><span>Настройки</span></button>
 </nav>
+
+<!-- Форма пароля -->
+<div class="overlay" id="passwordOverlay" onclick="if(event.target===this) closePasswordForm()">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <h2 id="passwordFormTitle">Новая запись</h2>
+    <div class="password-field"><label>Для чего запись</label><select id="p-scope" onchange="updatePasswordOrgLabel()"><option value="airline">Авиакомпания</option><option value="airport">Система аэропорта</option></select></div>
+    <div class="password-field"><label id="p-org-label">Авиакомпания</label><input id="p-organization" maxlength="80" placeholder="Например, S7 Airlines"></div>
+    <div class="password-field"><label>Название системы</label><input id="p-system" maxlength="100" placeholder="Например, DCS"></div>
+    <div class="password-field"><label>Логин</label><input id="p-login" maxlength="150" autocomplete="off"></div>
+    <div class="password-field"><label>Пароль</label><input id="p-password" type="password" maxlength="500" autocomplete="new-password"></div>
+    <div class="password-field"><label>Примечание (необязательно)</label><textarea id="p-note" maxlength="500"></textarea></div>
+    <div class="buttons"><button class="btn" onclick="closePasswordForm()">Отмена</button><button class="btn primary" onclick="savePasswordRecord()">Сохранить</button></div>
+  </div>
+</div>
 
 <!-- Форма добавления/редактирования -->
 <div class="overlay" id="overlay" onclick="if(event.target===this) closeForm()">
@@ -320,6 +352,11 @@ let flights = [];
 let editingId = null;
 let activeTab = 'flights';
 let scheduleDate = null;
+const VAULT_KEY = 'dme_password_vault_v1';
+let vaultKey = null;
+let vaultRecords = [];
+let editingPasswordId = null;
+let revealedPasswords = new Set();
 
 const PHONE_GROUPS = [
   { title: 'Службы аэропорта', items: [
@@ -364,9 +401,13 @@ function switchTab(tab) {
   activeTab = tab;
   document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
   const addButton = document.getElementById('addFlightBtn');
+  const addPasswordButton = document.getElementById('addPasswordBtn');
   const search = document.getElementById('search');
+  if (tab !== 'passwords') { vaultKey = null; vaultRecords = []; revealedPasswords.clear(); }
+  addPasswordButton.style.display = tab === 'passwords' && vaultKey ? '' : 'none';
   const toolbar = document.getElementById('pageToolbar');
   addButton.style.display = tab === 'flights' ? '' : 'none';
+  addPasswordButton.style.display = 'none';
   toolbar.style.display = tab === 'settings' ? 'none' : 'flex';
   search.style.display = tab === 'settings' ? 'none' : 'block';
   search.value = '';
@@ -475,6 +516,103 @@ function renderScheduleCard(f) {
     </div>`;
 }
 
+
+function bytesToBase64(bytes) { return btoa(String.fromCharCode(...new Uint8Array(bytes))); }
+function base64ToBytes(value) { return Uint8Array.from(atob(value), c => c.charCodeAt(0)); }
+async function deriveVaultKey(passphrase, salt) {
+  const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:310000, hash:'SHA-256'}, material, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+async function persistVault() {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({name:'AES-GCM', iv}, vaultKey, new TextEncoder().encode(JSON.stringify(vaultRecords)));
+  const meta = JSON.parse(localStorage.getItem(VAULT_KEY));
+  meta.iv = bytesToBase64(iv); meta.data = bytesToBase64(encrypted);
+  localStorage.setItem(VAULT_KEY, JSON.stringify(meta));
+}
+function renderPasswords() {
+  const list = document.getElementById('list');
+  const meta = localStorage.getItem(VAULT_KEY);
+  if (!window.crypto || !crypto.subtle) {
+    list.innerHTML = '<div class="vault-panel"><h3>Шифрование недоступно</h3><p>Открой сайт через HTTPS в современном браузере, чтобы использовать хранилище паролей.</p></div>';
+    return;
+  }
+  if (!meta) {
+    list.innerHTML = '<div class="section-heading">Защищённое хранилище</div><div class="security-note">Пароли будут шифроваться на этом устройстве алгоритмом AES-GCM. Мастер-пароль не сохраняется и не восстанавливается. Не сохраняй здесь рабочие учётные данные, если правила информационной безопасности аэропорта или авиакомпании запрещают это.</div><div class="vault-panel"><h3>Создать хранилище</h3><p>Придумай отдельный длинный мастер-пароль. Он понадобится каждый раз для доступа к записям.</p><div class="password-field"><label>Мастер-пароль</label><input id="vault-pass" type="password" autocomplete="new-password" placeholder="Не менее 12 символов"></div><div class="password-field"><label>Повтори мастер-пароль</label><input id="vault-pass2" type="password" autocomplete="new-password"></div><button class="btn primary" onclick="createVault()">Создать хранилище</button></div>';
+    return;
+  }
+  if (!vaultKey) {
+    list.innerHTML = '<div class="section-heading">Защищённое хранилище</div><div class="security-note">Зашифрованные записи хранятся только в браузере на этом устройстве. Они не включаются в резервную копию рейсов и не синхронизируются между устройствами. Потерянный мастер-пароль восстановить нельзя.</div><div class="vault-panel"><h3>Разблокировать</h3><p>Введи мастер-пароль, чтобы открыть хранилище.</p><div class="password-field"><input id="vault-pass" type="password" autocomplete="current-password" placeholder="Мастер-пароль"></div><button class="btn primary" onclick="unlockVault()">Разблокировать</button></div>';
+    return;
+  }
+  const query = document.getElementById('search').value.trim().toLowerCase();
+  const filtered = vaultRecords.filter(r => [r.organization,r.system,r.login,r.note,r.scope].join(' ').toLowerCase().includes(query));
+  list.innerHTML = '<div class="section-heading">Сохранённые доступы</div>' + (filtered.length ? filtered.map(r => {
+    const shown = revealedPasswords.has(r.id);
+    return '<div class="password-card"><div class="pw-top"><div><h3>'+escapeHtml(r.system)+'</h3><p>'+(r.scope === 'airline' ? 'Авиакомпания: ' : 'Система аэропорта: ')+escapeHtml(r.organization)+'</p><p>Логин: '+escapeHtml(r.login || '—')+'</p></div><div class="pw-actions"><button class="icon-btn" onclick="openPasswordForm(\''+r.id+'\')" aria-label="Изменить">✏️</button><button class="icon-btn" onclick="removePasswordRecord(\''+r.id+'\')" aria-label="Удалить">🗑️</button></div></div><div class="password-value"><code>'+(shown ? escapeHtml(r.password) : '••••••••••••')+'</code><button class="icon-btn" onclick="togglePasswordReveal(\''+r.id+'\')">'+(shown ? '🙈' : '👁️')+'</button><button class="icon-btn" onclick="copyPassword(\''+r.id+'\')">📋</button></div>'+(r.note ? '<p>'+escapeHtml(r.note)+'</p>' : '')+'</div>';
+  }).join('') : '<div class="empty">Пока нет записей. Нажми «Добавить пароль».</div>');
+}
+async function createVault() {
+  const pass = document.getElementById('vault-pass').value;
+  const pass2 = document.getElementById('vault-pass2').value;
+  if (pass.length < 12) { alert('Мастер-пароль должен содержать не менее 12 символов.'); return; }
+  if (pass !== pass2) { alert('Мастер-пароли не совпадают.'); return; }
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  vaultKey = await deriveVaultKey(pass, salt); vaultRecords = [];
+  localStorage.setItem(VAULT_KEY, JSON.stringify({version:1,salt:bytesToBase64(salt),iv:'',data:''}));
+  await persistVault(); render();
+}
+async function unlockVault() {
+  const pass = document.getElementById('vault-pass').value;
+  const meta = JSON.parse(localStorage.getItem(VAULT_KEY));
+  try {
+    vaultKey = await deriveVaultKey(pass, base64ToBytes(meta.salt));
+    const plain = await crypto.subtle.decrypt({name:'AES-GCM',iv:base64ToBytes(meta.iv)}, vaultKey, base64ToBytes(meta.data));
+    vaultRecords = JSON.parse(new TextDecoder().decode(plain));
+    render();
+    document.getElementById('addPasswordBtn').style.display = '';
+  } catch (e) { vaultKey = null; vaultRecords = []; alert('Неверный мастер-пароль или повреждено хранилище.'); }
+}
+function openPasswordForm(id=null) {
+  editingPasswordId = id;
+  const r = id ? vaultRecords.find(x => x.id === id) : null;
+  document.getElementById('passwordFormTitle').textContent = r ? 'Изменить запись' : 'Новый пароль';
+  document.getElementById('p-scope').value = r ? r.scope : 'airline';
+  document.getElementById('p-organization').value = r ? r.organization : '';
+  document.getElementById('p-system').value = r ? r.system : '';
+  document.getElementById('p-login').value = r ? r.login : '';
+  document.getElementById('p-password').value = r ? r.password : '';
+  document.getElementById('p-note').value = r ? r.note : '';
+  updatePasswordOrgLabel();
+  document.getElementById('passwordOverlay').classList.add('open');
+}
+function updatePasswordOrgLabel() {
+  const airport = document.getElementById('p-scope').value === 'airport';
+  document.getElementById('p-org-label').textContent = airport ? 'Название службы / подразделения' : 'Авиакомпания';
+  document.getElementById('p-organization').placeholder = airport ? 'Например, Домодедово' : 'Например, S7 Airlines';
+}
+function closePasswordForm() { document.getElementById('passwordOverlay').classList.remove('open'); editingPasswordId = null; }
+async function savePasswordRecord() {
+  const record = {id:editingPasswordId || (Date.now().toString(36)+Math.random().toString(36).slice(2,7)),scope:document.getElementById('p-scope').value,organization:document.getElementById('p-organization').value.trim(),system:document.getElementById('p-system').value.trim(),login:document.getElementById('p-login').value.trim(),password:document.getElementById('p-password').value,note:document.getElementById('p-note').value.trim()};
+  if (!record.organization || !record.system || !record.password) { alert('Заполни организацию, систему и пароль.'); return; }
+  const index = vaultRecords.findIndex(x => x.id === record.id);
+  if (index >= 0) vaultRecords[index] = record; else vaultRecords.push(record);
+  await persistVault(); closePasswordForm(); render();
+}
+async function removePasswordRecord(id) {
+  const r = vaultRecords.find(x => x.id === id);
+  if (!r || !confirm('Удалить пароль для системы «'+r.system+'»?')) return;
+  vaultRecords = vaultRecords.filter(x => x.id !== id); revealedPasswords.delete(id);
+  await persistVault(); render();
+}
+function togglePasswordReveal(id) { if (revealedPasswords.has(id)) revealedPasswords.delete(id); else revealedPasswords.add(id); renderPasswords(); }
+function copyPassword(id) {
+  const r = vaultRecords.find(x => x.id === id);
+  if (!r) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(r.password).then(()=>alert('Пароль скопирован.')).catch(()=>alert('Не удалось скопировать пароль.'));
+  else alert('Копирование недоступно в этом браузере.');
+}
+
 function renderSettings() {
   const list = document.getElementById('list');
   list.innerHTML = `
@@ -501,6 +639,7 @@ function renderSettings() {
 function render() {
   const list = document.getElementById('list');
   if (activeTab === 'phones') { renderPhones(); return; }
+  if (activeTab === 'passwords') { renderPasswords(); return; }
   if (activeTab === 'settings') { renderSettings(); return; }
   list.innerHTML = '';
 
