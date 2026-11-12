@@ -353,7 +353,6 @@ let editingId = null;
 let activeTab = 'flights';
 let scheduleDate = null;
 const VAULT_KEY = 'dme_password_vault_v1';
-let vaultKey = null;
 let vaultRecords = [];
 let editingPasswordId = null;
 let revealedPasswords = new Set();
@@ -403,8 +402,8 @@ function switchTab(tab) {
   const addButton = document.getElementById('addFlightBtn');
   const addPasswordButton = document.getElementById('addPasswordBtn');
   const search = document.getElementById('search');
-  if (tab !== 'passwords') { vaultKey = null; vaultRecords = []; revealedPasswords.clear(); }
-  addPasswordButton.style.display = tab === 'passwords' && vaultKey ? '' : 'none';
+  if (tab !== 'passwords') { loadVault(); revealedPasswords.clear(); }
+  addPasswordButton.style.display = tab === 'passwords' ? '' : 'none';
   const toolbar = document.getElementById('pageToolbar');
   addButton.style.display = tab === 'flights' ? '' : 'none';
   addPasswordButton.style.display = 'none';
@@ -532,48 +531,35 @@ async function persistVault() {
 }
 function renderPasswords() {
   const list = document.getElementById('list');
-  const meta = localStorage.getItem(VAULT_KEY);
-  if (!window.crypto || !crypto.subtle) {
-    list.innerHTML = '<div class="vault-panel"><h3>Шифрование недоступно</h3><p>Открой сайт через HTTPS в современном браузере, чтобы использовать хранилище паролей.</p></div>';
-    return;
-  }
-  if (!meta) {
-    list.innerHTML = '<div class="section-heading">Защищённое хранилище</div><div class="security-note">Пароли будут шифроваться на этом устройстве алгоритмом AES-GCM. Мастер-пароль не сохраняется и не восстанавливается. Не сохраняй здесь рабочие учётные данные, если правила информационной безопасности аэропорта или авиакомпании запрещают это.</div><div class="vault-panel"><h3>Создать хранилище</h3><p>Придумай отдельный длинный мастер-пароль. Он понадобится каждый раз для доступа к записям.</p><div class="password-field"><label>Мастер-пароль</label><input id="vault-pass" type="password" autocomplete="new-password" placeholder="Не менее 12 символов"></div><div class="password-field"><label>Повтори мастер-пароль</label><input id="vault-pass2" type="password" autocomplete="new-password"></div><button class="btn primary" onclick="createVault()">Создать хранилище</button></div>';
-    return;
-  }
-  if (!vaultKey) {
-    list.innerHTML = '<div class="section-heading">Защищённое хранилище</div><div class="security-note">Зашифрованные записи хранятся только в браузере на этом устройстве. Они не включаются в резервную копию рейсов и не синхронизируются между устройствами. Потерянный мастер-пароль восстановить нельзя.</div><div class="vault-panel"><h3>Разблокировать</h3><p>Введи мастер-пароль, чтобы открыть хранилище.</p><div class="password-field"><input id="vault-pass" type="password" autocomplete="current-password" placeholder="Мастер-пароль"></div><button class="btn primary" onclick="unlockVault()">Разблокировать</button></div>';
-    return;
-  }
   const query = document.getElementById('search').value.trim().toLowerCase();
   const filtered = vaultRecords.filter(r => [r.organization,r.system,r.login,r.note,r.scope].join(' ').toLowerCase().includes(query));
-  list.innerHTML = '<div class="section-heading">Сохранённые доступы</div>' + (filtered.length ? filtered.map(r => {
+  list.innerHTML = '<div class="section-heading">Пароли и доступы</div><div class="security-note">Хранилище не шифруется: пароли сохраняются в браузере в обычном виде. Не используй его для рабочих учётных данных, если это запрещено правилами безопасности аэропорта или авиакомпании.</div>' + (filtered.length ? filtered.map(r => {
     const shown = revealedPasswords.has(r.id);
-    return '<div class="password-card"><div class="pw-top"><div><h3>'+escapeHtml(r.system)+'</h3><p>'+(r.scope === 'airline' ? 'Авиакомпания: ' : 'Система аэропорта: ')+escapeHtml(r.organization)+'</p><p>Логин: '+escapeHtml(r.login || '—')+'</p></div><div class="pw-actions"><button class="icon-btn" onclick="openPasswordForm(\''+r.id+'\')" aria-label="Изменить">✏️</button><button class="icon-btn" onclick="removePasswordRecord(\''+r.id+'\')" aria-label="Удалить">🗑️</button></div></div><div class="password-value"><code>'+(shown ? escapeHtml(r.password) : '••••••••••••')+'</code><button class="icon-btn" onclick="togglePasswordReveal(\''+r.id+'\')">'+(shown ? '🙈' : '👁️')+'</button><button class="icon-btn" onclick="copyPassword(\''+r.id+'\')">📋</button></div>'+(r.note ? '<p>'+escapeHtml(r.note)+'</p>' : '')+'</div>';
+    const org = String(r.organization || '').trim().toLowerCase();
+    const airlineKey = Object.keys(AIRLINE_DOMAINS).find(key => key.toLowerCase() === org || key.toLowerCase().startsWith(org + ' (') || getAirlineCode(key).toLowerCase() === org);
+    const logo = r.scope === 'airline' && airlineKey ? getAirlineLogo(airlineKey) : '';
+    const identity = r.scope === 'airline'
+      ? (logo ? '<img class="airline-logo" src="'+logo+'" alt="" onerror="this.style.display=\'none\'">' : '<span class="airline-fallback">'+escapeHtml(airlineKey ? getAirlineCode(airlineKey) : '✈')+'</span>')
+      : '<span class="brand-mark" style="width:42px;height:42px;flex-shrink:0;font-size:15px;background:linear-gradient(115deg,#06466f,#087db5,#079b91);color:#fff">DME</span>';
+    const owner = r.scope === 'airline' ? escapeHtml(r.organization) : 'Аэропорт Домодедово';
+    return '<div class="password-card"><div class="pw-top"><div style="display:flex;align-items:center;gap:10px;min-width:0">'+identity+'<div><h3>'+escapeHtml(r.system)+'</h3><p>'+owner+'</p><p>Логин: '+escapeHtml(r.login || '—')+'</p></div></div><div class="pw-actions"><button class="icon-btn" onclick="openPasswordForm(\''+r.id+'\')" aria-label="Изменить">✏️</button><button class="icon-btn" onclick="removePasswordRecord(\''+r.id+'\')" aria-label="Удалить">🗑️</button></div></div><div class="password-value"><code>'+(shown ? escapeHtml(r.password) : '••••••••••••')+'</code><button class="icon-btn" onclick="togglePasswordReveal(\''+r.id+'\')">'+(shown ? '🙈' : '👁️')+'</button><button class="icon-btn" onclick="copyPassword(\''+r.id+'\')">📋</button></div>'+(r.note ? '<p>'+escapeHtml(r.note)+'</p>' : '')+'</div>';
   }).join('') : '<div class="empty">Пока нет записей. Нажми «Добавить пароль».</div>');
 }
-async function createVault() {
-  const pass = document.getElementById('vault-pass').value;
-  const pass2 = document.getElementById('vault-pass2').value;
-  if (pass.length < 12) { alert('Мастер-пароль должен содержать не менее 12 символов.'); return; }
-  if (pass !== pass2) { alert('Мастер-пароли не совпадают.'); return; }
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  vaultKey = await deriveVaultKey(pass, salt); vaultRecords = [];
-  localStorage.setItem(VAULT_KEY, JSON.stringify({version:1,salt:bytesToBase64(salt),iv:'',data:''}));
-  await persistVault(); render();
-  document.getElementById('addPasswordBtn').style.display = '';
-}
-async function unlockVault() {
-  const pass = document.getElementById('vault-pass').value;
-  const meta = JSON.parse(localStorage.getItem(VAULT_KEY));
+function loadVault() {
   try {
-    vaultKey = await deriveVaultKey(pass, base64ToBytes(meta.salt));
-    const plain = await crypto.subtle.decrypt({name:'AES-GCM',iv:base64ToBytes(meta.iv)}, vaultKey, base64ToBytes(meta.data));
-    vaultRecords = JSON.parse(new TextDecoder().decode(plain));
-    render();
-    document.getElementById('addPasswordBtn').style.display = '';
-  } catch (e) { vaultKey = null; vaultRecords = []; alert('Неверный мастер-пароль или повреждено хранилище.'); }
+    const raw = localStorage.getItem(VAULT_KEY);
+    if (!raw) { vaultRecords = []; return; }
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) { vaultRecords = parsed; return; }
+    if (parsed && Array.isArray(parsed.records)) { vaultRecords = parsed.records; return; }
+    // Старый зашифрованный формат нельзя прочитать без прежнего мастер-пароля.
+    vaultRecords = [];
+  } catch (e) { vaultRecords = []; }
 }
+function persistVault() {
+  localStorage.setItem(VAULT_KEY, JSON.stringify(vaultRecords));
+}
+
 function openPasswordForm(id=null) {
   editingPasswordId = id;
   const r = id ? vaultRecords.find(x => x.id === id) : null;
@@ -843,6 +829,7 @@ function removeFlight(id) {
 
 // Инициализация
 load();
+loadVault();
 scheduleDate = localDateISO();
 render();
 </script>
