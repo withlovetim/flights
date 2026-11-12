@@ -458,9 +458,9 @@ function openPhoneForm(id) {
   document.getElementById('ph-group').value = groupTitle;
   document.getElementById('ph-name').value = item ? item.name : '';
   document.getElementById('ph-numbers').value = item ? item.numbers.join('\n') : '';
-  document.getElementById('phoneOverlay').classList.add('show');
+  document.getElementById('phoneOverlay').classList.add('open');
 }
-function closePhoneForm() { document.getElementById('phoneOverlay').classList.remove('show'); editingPhoneId = null; }
+function closePhoneForm() { document.getElementById('phoneOverlay').classList.remove('open'); editingPhoneId = null; }
 function savePhoneRecord() {
   const groupTitle = document.getElementById('ph-group').value.trim();
   const name = document.getElementById('ph-name').value.trim();
