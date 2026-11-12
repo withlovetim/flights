@@ -366,6 +366,9 @@
       <div class="field">
         <label>Окончание задачи</label>
         <input type="time" id="f-task-end">
+    <div class="field"><label>Стойки регистрации</label><input type="text" id="f-checkin-counters" placeholder="Например: 101–108"></div>
+    <div class="field"><label>Выходы на посадку</label><input type="text" id="f-gates" placeholder="Например: 12, 13"></div>
+    <div class="field"><label>Место стоянки ВС</label><input type="text" id="f-aircraft-stand" placeholder="Например: 52"></div>
       </div>
     </div>
     <div class="buttons">
@@ -529,6 +532,7 @@ function renderFlightCard(f) {
         <div class="dest">${escapeHtml(f.destination)}</div>
         <div class="when">${formatDate(f.date)} · Время рейса: ${escapeHtml(f.time || '—')}</div>
         <div class="when"><span class="task-label">${escapeHtml(f.taskType || 'Регистрация')}</span> · ${escapeHtml(f.taskStart || '—')}–${escapeHtml(f.taskEnd || '—')}</div>
+        ${(f.checkinCounters || f.gates || f.aircraftStand) ? `<div class="when">Стойки: ${escapeHtml(f.checkinCounters || '—')} · Выходы: ${escapeHtml(f.gates || '—')} · Стоянка ВС: ${escapeHtml(f.aircraftStand || '—')}</div>` : ''}
       </div>
       <div class="actions">
         <button class="icon-btn" onclick="openForm('${f.id}')" aria-label="Редактировать">✏️</button>
@@ -770,7 +774,7 @@ function importBackup(event) {
 }
 
 function exportCSV() {
-  const rows = [['Авиакомпания','Номер рейса','Направление','Дата','Время рейса','Тип задачи','Начало задачи','Окончание задачи'], ...flights.map(f => [f.airline || '',f.number || '',f.destination || '',f.date || '',f.time || '',f.taskType || 'Регистрация',f.taskStart || '',f.taskEnd || ''])];
+  const rows = [['Авиакомпания','Номер рейса','Направление','Дата','Время рейса','Тип задачи','Начало задачи','Окончание задачи','Стойки регистрации','Выходы на посадку','Место стоянки ВС'], ...flights.map(f => [f.airline || '',f.number || '',f.destination || '',f.date || '',f.time || '',f.taskType || 'Регистрация',f.taskStart || '',f.taskEnd || '',f.checkinCounters || '',f.gates || '',f.aircraftStand || ''])];
   const csv = '\uFEFF' + rows.map(row => row.map(value => '"' + String(value).replace(/"/g,'""') + '"').join(';')).join('\r\n');
   downloadFile(csv, 'dme-flights-' + localDateISO() + '.csv', 'text/csv;charset=utf-8');
 }
@@ -916,6 +920,9 @@ function suggestTaskTimes() {
   };
   document.getElementById('f-task-start').value = format(total - 240);
   document.getElementById('f-task-end').value = format(total - 60);
+  document.getElementById('f-checkin-counters').value = f ? (f.checkinCounters || '') : '';
+  document.getElementById('f-gates').value = f ? (f.gates || '') : '';
+  document.getElementById('f-aircraft-stand').value = f ? (f.aircraftStand || '') : '';
 }
 
 function saveCustomDmeRoute(airline, number, destination) {
@@ -963,6 +970,9 @@ function saveFlight() {
   const taskType = document.getElementById('f-task-type').value;
   const taskStart = document.getElementById('f-task-start').value;
   const taskEnd = document.getElementById('f-task-end').value;
+  const checkinCounters = document.getElementById('f-checkin-counters').value.trim();
+  const gates = document.getElementById('f-gates').value.trim();
+  const aircraftStand = document.getElementById('f-aircraft-stand').value.trim();
 
   if (!airline || !number || !destination || !date || !time || !taskStart || !taskEnd) {
     alert('Заполни авиакомпанию, рейс, дату, время рейса и время начала и окончания задачи');
@@ -978,7 +988,7 @@ function saveFlight() {
 
   if (editingId) {
     const f = flights.find(x => x.id === editingId);
-    Object.assign(f, { airline, number, destination, date, time, taskType, taskStart, taskEnd });
+      airline, number, destination, date, time, taskType, taskStart, taskEnd, checkinCounters, gates, aircraftStand
   } else {
     flights.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
