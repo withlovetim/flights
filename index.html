@@ -231,71 +231,13 @@
     display: flex; gap: 10px; margin-top: 20px;
   }
   .sheet .buttons .btn { flex: 1; }
-
-  /* Темная тема */
-  body[data-theme="dark"] { --bg:#101923; --card:#1a2733; --card2:#263746; --text:#e5edf4; --dim:#9aafc0; --accent:#36a9df; color-scheme:dark; }
-  body[data-theme="dark"] { background:var(--bg); color:var(--text); }
-  body[data-theme="dark"] .bottom-nav { background:rgba(20,31,42,.97); border-color:#304252; }
-  body[data-theme="dark"] .nav-btn.active { color:#70c9f2; background:#263d4d; }
-  body[data-theme="dark"] .search,
-  body[data-theme="dark"] .schedule-date,
-  body[data-theme="dark"] .field input,
-  body[data-theme="dark"] .field select,
-  body[data-theme="dark"] .vault-panel input,
-  body[data-theme="dark"] .password-field input,
-  body[data-theme="dark"] .password-field select,
-  body[data-theme="dark"] .password-field textarea { background:#233442; color:var(--text); border-color:#3a5061; }
-  body[data-theme="dark"] .calendar-day { border-color:#3a5061; }
-  body[data-theme="dark"] .shift-day { background:#203b58; border-color:#315b82; color:#b9dcff; }
-  body[data-theme="dark"] .shift-night { background:#1c403e; border-color:#286b64; color:#a9eee3; }
-  body[data-theme="dark"] .shift-rest { background:#493923; border-color:#76582b; color:#ffdda0; }
-  body[data-theme="dark"] .shift-off { background:#303b48; border-color:#4b5969; color:#d0d9e4; }
-  body[data-theme="dark"] .calendar-info,
-  body[data-theme="dark"] .password-card,
-  body[data-theme="dark"] .vault-panel,
-  body[data-theme="dark"] .settings-card,
-  body[data-theme="dark"] .phone-card,
-  body[data-theme="dark"] .flight { background:var(--card); border-color:#304454; }
-  body[data-theme="dark"] .phone-number { background:#263d4d; color:#8bd6f7; }
-  body[data-theme="dark"] .password-value code { background:#263746; color:#e5edf4; }
-  body[data-theme="dark"] .security-note { background:#41351f; border-color:#6a542c; color:#f4d99e; }
-  body[data-theme="dark"] .icon-btn { background:#2b3d4c; color:var(--text); }
-  body[data-theme="dark"] .task-registration .task-label,
-  body[data-theme="dark"] .schedule-flight.task-registration .schedule-task { background:#203e56; color:#9ed8ff; }
-  body[data-theme="dark"] .task-boarding .task-label,
-  body[data-theme="dark"] .schedule-flight.task-boarding .schedule-task { background:#19443e; color:#9ce9dc; }
-  body[data-theme="dark"] .task-both .task-label,
-  body[data-theme="dark"] .schedule-flight.task-both .schedule-task { background:#3a3154; color:#d2c2ff; }
-  body[data-theme="dark"] .schedule-time { color:#8bd6f7; }
-  body[data-theme="dark"] .flight .dest { color:var(--text); }
-  body[data-theme="dark"] .calendar-day.today { outline-color:#70c9f2; }
-  body[data-theme="dark"] .calendar-day.selected { box-shadow:0 0 0 2px #70c9f2 inset; }
-  body[data-theme="dark"] .home-panel { background:linear-gradient(135deg,#173b53,#174b4a); border-color:#2c6174; }
-  body[data-theme="dark"] .home-stat { background:rgba(9,20,30,.28); border-color:rgba(190,225,245,.13); }
-  .home-panel { background:linear-gradient(135deg,#e5f2f9,#e4f4f0); border:1px solid #cfe3eb; border-radius:18px; padding:16px; margin-bottom:16px; }
-  .home-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:13px; }
-  .home-date { font-size:19px; font-weight:850; }
-  .home-shift { display:inline-flex; margin-top:5px; padding:5px 9px; border-radius:8px; background:rgba(8,125,181,.12); color:var(--accent); font-size:12px; font-weight:800; }
-  .home-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:12px 0; }
-  .home-stat { background:rgba(255,255,255,.62); border:1px solid rgba(80,130,155,.13); border-radius:12px; padding:11px; min-width:0; }
-  .home-stat strong { display:block; font-size:23px; line-height:1.15; }
-  .home-stat span { display:block; margin-top:4px; color:var(--dim); font-size:11px; font-weight:700; }
-  .home-next { font-size:13px; line-height:1.45; margin:10px 0 12px; }
-  .home-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .home-actions .btn { min-width:0; padding:11px 10px; }
-
-
-  .brand-mark.airport-logo { width:190px; height:48px; padding:7px 10px; background:#fff; border:1px solid rgba(255,255,255,.5); border-radius:12px; flex:0 0 auto; }
-  .brand-mark.airport-logo img { display:block; width:100%; height:100%; object-fit:contain; }
-  @media(max-width:380px){ .brand-mark.airport-logo{width:155px;height:43px;padding:6px 8px;} header{padding:14px 14px;} }
-
 </style>
 </head>
 <body>
 
 <header>
   <div class="brand">
-    <div class="brand-mark airport-logo"><img src="https://upload.wikimedia.org/wikipedia/commons/3/38/Domodedovo_Airport_logo_%28ru%29.svg" alt="Логотип аэропорта Домодедово"></div>
+    <div class="brand-mark">DME</div>
     <div>
       <h1>МОИ РЕЙСЫ</h1>
       <div class="sub">DOMODEDOVO · FLIGHT LOG</div>
@@ -463,18 +405,6 @@
  </div>
 </div>
 <script>
-
-const THEME_KEY = 'dme_theme_v1';
-function applyTheme() {
-  let choice = localStorage.getItem(THEME_KEY) || 'system';
-  const dark = choice === 'dark' || (choice === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  document.body.dataset.theme = dark ? 'dark' : 'light';
-}
-function setTheme(choice) {
-  localStorage.setItem(THEME_KEY, choice);
-  applyTheme();
-}
-
 const STORAGE_KEY = 'flights_v1';
 let flights = [];
 let editingId = null;
@@ -774,16 +704,6 @@ function renderSettings() {
   list.innerHTML = `
     <div class="section-heading">Настройки и данные</div>
     <div class="settings-card">
-      <h3>Оформление</h3>
-      <p>Выбери удобный режим. Настройка сохраняется на этом устройстве.</p>
-      <div class="field" style="margin-bottom:0"><select id="themeSelect" onchange="setTheme(this.value)">
-        <option value="system">Как на устройстве</option>
-        <option value="light">Светлая тема</option>
-        <option value="dark">Тёмная тема</option>
-      </select></div>
-    </div>
-
-    <div class="settings-card">
       <h3>Резервная копия</h3>
       <p>Скачай файл со всеми рейсами, чтобы сохранить их или перенести на другое устройство.</p>
       <button class="btn primary" onclick="exportBackup()">Скачать резервную копию</button>
@@ -800,8 +720,6 @@ function renderSettings() {
       <p>DME — Мои рейсы. Данные рейсов хранятся в браузере на этом устройстве. Регулярно создавай резервные копии.</p>
     </div>
   `;
-  const themeSelect = document.getElementById('themeSelect');
-  if (themeSelect) themeSelect.value = localStorage.getItem(THEME_KEY) || 'system';
 }
 
 function isoDateLocal(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
@@ -817,23 +735,6 @@ for(let i=0;i<42;i++){const d=new Date(start.getFullYear(),start.getMonth(),star
 const selected=calendarSelected||localDateISO(),shift=shiftForDate(selected),count=counts[selected]||0;
 list.innerHTML='<div class="section-heading">Мой график смен</div><div class="calendar-head"><button class="btn" onclick="changeCalendarMonth(-1)">‹</button><div class="calendar-month">'+names[calendarMonth.getMonth()]+' '+calendarMonth.getFullYear()+'</div><button class="btn" onclick="changeCalendarMonth(1)">›</button></div><div class="calendar-grid">'+['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(x=>'<div class="calendar-weekday">'+x+'</div>').join('')+cells+'</div><div class="calendar-legend"><span><i class="legend-dot" style="background:#2563eb"></i>День</span><span><i class="legend-dot" style="background:#0f766e"></i>Ночь</span><span><i class="legend-dot" style="background:#d97706"></i>Отсыпной</span><span><i class="legend-dot" style="background:#64748b"></i>Выходной</span></div><div class="calendar-info"><strong>'+formatDate(selected)+' · '+shift+'</strong><div style="font-size:13px;color:var(--dim)">'+(count?count+' рейсов запланировано':'Рейсов на эту дату пока нет')+'</div><button class="btn primary" style="margin-top:10px;width:100%" onclick="openCalendarDate(&quot;'+selected+'&quot;)">Открыть расписание дня</button></div><button class="btn" style="width:100%;margin-top:10px" onclick="calendarSelected=localDateISO();calendarMonth=new Date();render()">Перейти к сегодняшней дате</button>';
 }
-
-function renderHomeDashboard() {
-  const today = localDateISO();
-  const todayFlights = flights.filter(f => f.date === today).slice().sort((a,b) => String(a.taskStart || a.time || '').localeCompare(String(b.taskStart || b.time || '')));
-  const now = new Date().toTimeString().slice(0,5);
-  const next = todayFlights.find(f => String(f.taskEnd || f.taskStart || f.time || '') >= now);
-  const nextText = next
-    ? '<strong>' + escapeHtml(next.taskStart || next.time || '—') + ' · ' + escapeHtml(next.number || 'Рейс') + '</strong><br>' + escapeHtml(next.destination || '') + (next.taskType ? ' · ' + escapeHtml(next.taskType) : '')
-    : (todayFlights.length ? 'На сегодня больше нет предстоящих задач' : 'На сегодня рейсы пока не добавлены');
-  return '<section class="home-panel">' +
-    '<div class="home-top"><div><div class="home-date">' + formatDate(today) + '</div><div class="home-shift">' + escapeHtml(shiftForDate(today)) + ' смена</div></div><div style="font-size:27px">✈️</div></div>' +
-    '<div class="home-stats"><div class="home-stat"><strong>' + todayFlights.length + '</strong><span>РЕЙСОВ СЕГОДНЯ</span></div><div class="home-stat"><strong>' + (next ? escapeHtml(next.taskStart || next.time || '—') : '—') + '</strong><span>БЛИЖАЙШАЯ ЗАДАЧА</span></div></div>' +
-    '<div class="home-next">' + (next ? 'Следующая задача: ' : '') + nextText + '</div>' +
-    '<div class="home-actions"><button class="btn primary" onclick="openForm()">＋ Добавить рейс</button><button class="btn" onclick="switchTab(\'schedule\')">Открыть расписание</button></div>' +
-    '</section>';
-}
-
 function render() {
   const list = document.getElementById('list');
   if (activeTab === 'calendar') { renderCalendar(); return; }
@@ -861,8 +762,6 @@ function render() {
     String(f.gates || '').toLowerCase().includes(query) ||
     String(f.aircraftStand || '').toLowerCase().includes(query)
   );
-
-  if (activeTab === 'flights') list.insertAdjacentHTML('beforeend', renderHomeDashboard());
 
   if (activeTab === 'schedule') {
     list.innerHTML = `
@@ -1181,8 +1080,6 @@ function removeFlight(id) {
 }
 
 // Инициализация
-applyTheme();
-if (window.matchMedia) { const themeMedia = window.matchMedia("(prefers-color-scheme: dark)"); if (themeMedia.addEventListener) themeMedia.addEventListener("change", () => { if ((localStorage.getItem(THEME_KEY) || "system") === "system") applyTheme(); }); }
 load();
 loadVault();
 loadCustomDmeRoutes();
