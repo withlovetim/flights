@@ -403,10 +403,9 @@ function switchTab(tab) {
   const addPasswordButton = document.getElementById('addPasswordBtn');
   const search = document.getElementById('search');
   if (tab !== 'passwords') { loadVault(); revealedPasswords.clear(); }
-  addPasswordButton.style.display = tab === 'passwords' ? '' : 'none';
   const toolbar = document.getElementById('pageToolbar');
   addButton.style.display = tab === 'flights' ? '' : 'none';
-  addPasswordButton.style.display = 'none';
+  addPasswordButton.style.display = tab === 'passwords' ? '' : 'none';
   toolbar.style.display = tab === 'settings' ? 'none' : 'flex';
   search.style.display = tab === 'settings' ? 'none' : 'block';
   search.value = '';
