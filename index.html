@@ -836,7 +836,10 @@ function loadAirlineRoutes() {
   }
   field.style.display = 'block';
   const seeded = DME_ROUTE_SEED[airline] || [];
-  const custom = customDmeRoutes.filter(x => x.airline === airline).map(x => [x.number, x.destination]);
+  const custom = customDmeRoutes.filter(x =>
+    x.airline === airline &&
+    !(airline === 'Emirates (EK)' && ['EK 129','EK 131','EK 133'].includes(x.number.toUpperCase().replace(/\\s+/g,' ').trim()))
+  ).map(x => [x.number, x.destination]);
   const merged = seeded.concat(custom).filter((route, index, arr) =>
     arr.findIndex(x => x[0].toUpperCase() === route[0].toUpperCase()) === index
   );
