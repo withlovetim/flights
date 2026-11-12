@@ -118,6 +118,8 @@
   .flight .info { flex: 1; min-width: 0; }
   .flight.task-registration { border-left: 4px solid #087db5; }
   .flight.task-boarding { border-left: 4px solid #12a995; }
+  .task-both { border-left: 4px solid #8b70c7; }
+
   .task-label {
     display: inline-flex; align-items: center; width: fit-content;
     padding: 4px 8px; border-radius: 7px;
@@ -130,6 +132,10 @@
   .task-boarding .task-label,
   .schedule-flight.task-boarding .schedule-task {
     background: #def7f2; color: #078b7b;
+  }
+  .task-both .task-label,
+  .schedule-flight.task-both .schedule-task {
+    background: #f0eafd; color: #7052ad;
   }
   .airline-line {
     display: flex; align-items: center; gap: 8px;
@@ -339,6 +345,7 @@
       <select id="f-task-type">
         <option value="Регистрация">Регистрация</option>
         <option value="Посадка">Посадка</option>
+        <option value="Регистрация и посадка">Регистрация и посадка</option>
       </select>
     </div>
     <div class="row">
@@ -500,7 +507,7 @@ function formatDate(iso) {
 }
 
 function renderFlightCard(f) {
-  const taskClass = (f.taskType || 'Регистрация') === 'Посадка' ? 'task-boarding' : 'task-registration';
+  const taskClass = (f.taskType || 'Регистрация') === 'Посадка' ? 'task-boarding' : (f.taskType === 'Регистрация и посадка' ? 'task-both' : 'task-registration');
   return `
     <div class="flight ${taskClass}">
       <div class="info">
