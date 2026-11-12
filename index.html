@@ -242,6 +242,7 @@
   <div class="toolbar" id="pageToolbar">
     <button class="btn primary" id="addFlightBtn" onclick="openForm()">+ Добавить рейс</button>
     <button class="btn primary" id="addPasswordBtn" style="display:none" onclick="openPasswordForm()">+ Добавить пароль</button>
+    <button class="btn primary" id="addPhoneBtn" style="display:none" onclick="openPhoneForm()">+ Добавить номер</button>
   </div>
   <input type="text" class="search" id="search" placeholder="🔍 Поиск по номеру или направлению" oninput="render()">
   <div id="list"></div>
@@ -254,6 +255,17 @@
   <button class="nav-btn" data-tab="passwords" onclick="switchTab('passwords')"><span class="nav-icon">🔐</span><span>Пароли</span></button>
   <button class="nav-btn" data-tab="settings" onclick="switchTab('settings')"><span class="nav-icon">⚙️</span><span>Настройки</span></button>
 </nav>
+
+<!-- Форма телефона -->
+<div class="overlay" id="phoneOverlay" onclick="if(event.target===this) closePhoneForm()">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <h2 id="phoneFormTitle">Новый контакт</h2>
+    <div class="field"><label>Служба / организация</label><input id="ph-group" maxlength="100" placeholder="Например, Службы аэропорта"></div>
+    <div class="field"><label>Название контакта</label><input id="ph-name" maxlength="120" placeholder="Например, Диспетчер регистрации"></div>
+    <div class="field"><label>Номер телефона (несколько — каждый с новой строки)</label><textarea id="ph-numbers" maxlength="500" rows="3" placeholder="+7 (495) 000-00-00&#10;12906"></textarea></div>
+    <div class="buttons"><button class="btn" onclick="closePhoneForm()">Отмена</button><button class="btn primary" onclick="savePhoneRecord()">Сохранить</button></div>
+  </div>
+</div>
 
 <!-- Форма пароля -->
 <div class="overlay" id="passwordOverlay" onclick="if(event.target===this) closePasswordForm()">
@@ -357,6 +369,9 @@ let vaultRecords = [];
 let editingPasswordId = null;
 let revealedPasswords = new Set();
 
+const PHONE_STORAGE_KEY = 'dme_phone_contacts_v1';
+let phoneGroups = [];
+let editingPhoneId = null;
 const PHONE_GROUPS = [
   { title: 'Службы аэропорта', items: [
     { name: 'Коммутатор', numbers: ['+7 (495) 967-83-63'] },
@@ -388,6 +403,15 @@ const PHONE_GROUPS = [
   ]}
 ];
 
+function loadPhoneGroups() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PHONE_STORAGE_KEY) || "null");
+    if (Array.isArray(saved)) { phoneGroups = saved; return; }
+  } catch (e) {}
+  phoneGroups = PHONE_GROUPS.map((group, gi) => ({ title: group.title, items: group.items.map((item, i) => ({ id: "default-" + gi + "-" + i, name: item.name, numbers: item.numbers.slice() })) }));
+}
+function persistPhoneGroups() { localStorage.setItem(PHONE_STORAGE_KEY, JSON.stringify(phoneGroups)); }
+
 const STATUS_COLORS = {
   'Запланирован': 'var(--accent)',
   'В пути': 'var(--yellow)',
@@ -401,11 +425,14 @@ function switchTab(tab) {
   document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
   const addButton = document.getElementById('addFlightBtn');
   const addPasswordButton = document.getElementById('addPasswordBtn');
+  const addPhoneButton = document.getElementById('addPhoneBtn');
   const search = document.getElementById('search');
   if (tab !== 'passwords') { loadVault(); revealedPasswords.clear(); }
   const toolbar = document.getElementById('pageToolbar');
   addButton.style.display = tab === 'flights' ? '' : 'none';
   addPasswordButton.style.display = tab === 'passwords' ? '' : 'none';
+  addPhoneButton.style.display = tab === 'phones' ? '' : 'none';
+  if (tab === 'phones') loadPhoneGroups();
   toolbar.style.display = tab === 'settings' ? 'none' : 'flex';
   search.style.display = tab === 'settings' ? 'none' : 'block';
   search.value = '';
@@ -416,31 +443,37 @@ function switchTab(tab) {
 function renderPhones() {
   const list = document.getElementById('list');
   const query = document.getElementById('search').value.trim().toLowerCase();
-  const groups = PHONE_GROUPS.map(group => ({
-    title: group.title,
-    items: group.items.filter(item =>
-      (item.name + ' ' + item.numbers.join(' ')).toLowerCase().includes(query)
-    )
-  })).filter(group => group.items.length);
-  if (!groups.length) {
-    list.innerHTML = '<div class="empty">🔍 Ничего не найдено</div>';
-    return;
-  }
-  list.innerHTML = groups.map(group => `
-    <div class="phone-group-title">${escapeHtml(group.title)}</div>
-    ${group.items.map(item => `
-      <div class="phone-card">
-        <div class="phone-name">${escapeHtml(item.name)}</div>
-        <div class="phone-numbers">${item.numbers.map(number => {
-          const tel = number.replace(/[^+\d]/g, '');
-          return `<a class="phone-number" href="tel:${tel}">${escapeHtml(number)}</a>`;
-        }).join('')}</div>
-      </div>
-    `).join('')}
-  `).join('');
+  const groups = phoneGroups.map(group => ({ title: group.title, items: group.items.filter(item => (item.name + ' ' + item.numbers.join(' ')).toLowerCase().includes(query)) })).filter(group => group.items.length);
+  if (!groups.length) { list.innerHTML = '<div class="empty">🔍 Ничего не найдено</div>'; return; }
+  list.innerHTML = groups.map(group => '<div class="phone-group-title">' + escapeHtml(group.title) + '</div>' + group.items.map(item =>
+    '<div class="phone-card"><div class="row" style="align-items:center;justify-content:space-between;gap:8px"><div class="phone-name">' + escapeHtml(item.name) + '</div><button class="btn small" onclick="openPhoneForm(\'' + item.id + '\')">Изменить</button></div><div class="phone-numbers">' +
+    item.numbers.map(number => { const tel = number.replace(/[^+\\d]/g, ''); return '<a class="phone-number" href="tel:' + tel + '">' + escapeHtml(number) + '</a>'; }).join('') + '</div></div>'
+  ).join('')).join('');
 }
 
+function openPhoneForm(id) {
+  editingPhoneId = id || null; let item = null, groupTitle = '';
+  if (id) for (const group of phoneGroups) { item = group.items.find(x => x.id === id); if (item) { groupTitle = group.title; break; } }
+  document.getElementById('phoneFormTitle').textContent = id ? 'Изменить контакт' : 'Новый контакт';
+  document.getElementById('ph-group').value = groupTitle;
+  document.getElementById('ph-name').value = item ? item.name : '';
+  document.getElementById('ph-numbers').value = item ? item.numbers.join('\n') : '';
+  document.getElementById('phoneOverlay').classList.add('show');
+}
+function closePhoneForm() { document.getElementById('phoneOverlay').classList.remove('show'); editingPhoneId = null; }
+function savePhoneRecord() {
+  const groupTitle = document.getElementById('ph-group').value.trim();
+  const name = document.getElementById('ph-name').value.trim();
+  const numbers = document.getElementById('ph-numbers').value.split(/[\n,;]+/).map(x => x.trim()).filter(Boolean);
+  if (!groupTitle || !name || !numbers.length) { alert('Заполни службу, название контакта и хотя бы один номер.'); return; }
+  if (editingPhoneId) for (const group of phoneGroups) group.items = group.items.filter(x => x.id !== editingPhoneId);
+  let target = phoneGroups.find(g => g.title.toLowerCase() === groupTitle.toLowerCase());
+  if (!target) { target = { title: groupTitle, items: [] }; phoneGroups.push(target); }
+  target.items.push({ id: editingPhoneId || ('phone-' + Date.now()), name: name, numbers: numbers });
+  phoneGroups = phoneGroups.filter(g => g.items.length); persistPhoneGroups(); closePhoneForm(); renderPhones();
+}
 function load() {
+  loadPhoneGroups();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     flights = raw ? JSON.parse(raw) : [];
