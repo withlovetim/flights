@@ -446,7 +446,7 @@ function renderPhones() {
   const groups = phoneGroups.map(group => ({ title: group.title, items: group.items.filter(item => (item.name + ' ' + item.numbers.join(' ')).toLowerCase().includes(query)) })).filter(group => group.items.length);
   if (!groups.length) { list.innerHTML = '<div class="empty">🔍 Ничего не найдено</div>'; return; }
   list.innerHTML = groups.map(group => '<div class="phone-group-title">' + escapeHtml(group.title) + '</div>' + group.items.map(item =>
-    '<div class="phone-card"><div class="row" style="align-items:center;justify-content:space-between;gap:8px"><div class="phone-name">' + escapeHtml(item.name) + '</div><button class="btn small" onclick="openPhoneForm(\'' + item.id + '\')">Изменить</button></div><div class="phone-numbers">' +
+    '<div class="phone-card"><div class="row" style="align-items:center;justify-content:space-between;gap:8px"><div class="phone-name">' + escapeHtml(item.name) + '</div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn small" onclick="openPhoneForm(\'' + item.id + '\')">Изменить</button><button class="btn small" style="color:#c0392b" onclick="deletePhoneRecord(\'' + item.id + '\')">Удалить</button></div></div><div class="phone-numbers">' +
     item.numbers.map(number => { const tel = number.replace(/[^+\\d]/g, ''); return '<a class="phone-number" href="tel:' + tel + '">' + escapeHtml(number) + '</a>'; }).join('') + '</div></div>'
   ).join('')).join('');
 }
@@ -461,6 +461,13 @@ function openPhoneForm(id) {
   document.getElementById('phoneOverlay').classList.add('open');
 }
 function closePhoneForm() { document.getElementById('phoneOverlay').classList.remove('open'); editingPhoneId = null; }
+function deletePhoneRecord(id) {
+  if (!confirm('Удалить этот контакт и все его номера?')) return;
+  for (const group of phoneGroups) group.items = group.items.filter(item => item.id !== id);
+  phoneGroups = phoneGroups.filter(group => group.items.length);
+  persistPhoneGroups();
+  renderPhones();
+}
 function savePhoneRecord() {
   const groupTitle = document.getElementById('ph-group').value.trim();
   const name = document.getElementById('ph-name').value.trim();
