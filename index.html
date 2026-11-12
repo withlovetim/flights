@@ -249,10 +249,11 @@
 <div class="container">
   <div class="toolbar" id="pageToolbar">
     <button class="btn primary" id="addFlightBtn" onclick="openForm()">+ Добавить рейс</button>
+    <button class="btn" onclick="focusLocationSearch()">⌕ Поиск стоек и выходов</button>
     <button class="btn primary" id="addPasswordBtn" style="display:none" onclick="openPasswordForm()">+ Добавить пароль</button>
     <button class="btn primary" id="addPhoneBtn" style="display:none" onclick="openPhoneForm()">+ Добавить номер</button>
   </div>
-  <input type="text" class="search" id="search" placeholder="🔍 Поиск по номеру или направлению" oninput="render()">
+  <input type="text" class="search" id="search" placeholder="🔍 Поиск по номеру, направлению, стойке, выходу или стоянке" oninput="render()">
   <div id="list"></div>
 </div>
 
@@ -378,6 +379,13 @@
   </div>
 </div>
 
+<div class="overlay" id="passportOverlay" onclick="if(event.target===this) closeFlightPassport()">
+ <div class="sheet" onclick="event.stopPropagation()">
+  <h2>Паспорт рейса</h2><div id="passportContent"></div>
+  <div class="field"><label>Заметки</label><textarea id="passportNotes" rows="3" placeholder="Важная информация по рейсу"></textarea></div>
+  <div class="buttons"><button class="btn" onclick="closeFlightPassport()">Закрыть</button><button class="btn primary" onclick="savePassportNotes()">Сохранить заметку</button></div>
+ </div>
+</div>
 <script>
 const STORAGE_KEY = 'flights_v1';
 let flights = [];
@@ -522,10 +530,27 @@ function formatDate(iso) {
   return `${d}.${m}.${y}`;
 }
 
+let passportFlightId = null;
+function focusLocationSearch(){const el=document.getElementById('search');el.focus();el.scrollIntoView({behavior:'smooth',block:'center'});}
+function openFlightPassport(id){
+ const f=flights.find(x=>x.id===id);if(!f)return;passportFlightId=id;
+ let h='<div class="settings-card"><h3>'+escapeHtml(f.number||'')+'</h3>';
+ h+='<p>'+escapeHtml(f.airline||'')+' · '+escapeHtml(f.destination||'')+'</p>';
+ h+='<p>Дата: '+formatDate(f.date)+' · Вылет: '+escapeHtml(f.time||'—')+'</p>';
+ h+='<p>Задача: '+escapeHtml(f.taskType||'Регистрация')+' · '+escapeHtml(f.taskStart||'—')+'–'+escapeHtml(f.taskEnd||'—')+'</p>';
+ h+='<p>Стойки: <b>'+escapeHtml(f.checkinCounters||'—')+'</b></p>';
+ h+='<p>Выходы: <b>'+escapeHtml(f.gates||'—')+'</b></p>';
+ h+='<p>Стоянка ВС: <b>'+escapeHtml(f.aircraftStand||'—')+'</b></p></div>';
+ document.getElementById('passportContent').innerHTML=h;
+ document.getElementById('passportNotes').value=f.notes||'';
+ document.getElementById('passportOverlay').classList.add('open');
+}
+function closeFlightPassport(){document.getElementById('passportOverlay').classList.remove('open');passportFlightId=null;}
+function savePassportNotes(){const f=flights.find(x=>x.id===passportFlightId);if(!f)return;f.notes=document.getElementById('passportNotes').value.trim();save();closeFlightPassport();render();}
 function renderFlightCard(f) {
   const taskClass = (f.taskType || 'Регистрация') === 'Посадка' ? 'task-boarding' : (f.taskType === 'Регистрация и посадка' ? 'task-both' : 'task-registration');
   return `
-    <div class="flight ${taskClass}">
+    <div class="flight ${taskClass}" onclick="openFlightPassport(this.dataset.id)" data-id="${f.id}">
       <div class="info">
         <div class="num">${escapeHtml(f.number)}</div>
         ${f.airline ? (() => { const logo = getAirlineLogo(f.airline); return logo ? `<div class="airline-line"><img class="airline-logo" src="${logo}" alt="" onerror="this.outerHTML='<span class=\\'airline-fallback\\'>${escapeHtml(getAirlineCode(f.airline))}</span>'"><span>${escapeHtml(f.airline)}</span></div>` : `<div class="airline-line"><span class="airline-fallback">${escapeHtml(getAirlineCode(f.airline))}</span><span>${escapeHtml(f.airline)}</span></div>`; })() : ''}
@@ -714,7 +739,10 @@ function render() {
   if (query) items = items.filter(f =>
     String(f.number || '').toLowerCase().includes(query) ||
     String(f.destination || '').toLowerCase().includes(query) ||
-    String(f.airline || '').toLowerCase().includes(query)
+    String(f.airline || '').toLowerCase().includes(query) ||
+    String(f.checkinCounters || '').toLowerCase().includes(query) ||
+    String(f.gates || '').toLowerCase().includes(query) ||
+    String(f.aircraftStand || '').toLowerCase().includes(query)
   );
 
   if (activeTab === 'schedule') {
@@ -951,6 +979,9 @@ function openForm(id = null) {
   document.getElementById('f-task-type').value = f ? (f.taskType || 'Регистрация') : 'Регистрация';
   document.getElementById('f-task-start').value = f ? (f.taskStart || '') : '';
   document.getElementById('f-task-end').value = f ? (f.taskEnd || '') : '';
+  document.getElementById('f-checkin-counters').value = f ? (f.checkinCounters || '') : '';
+  document.getElementById('f-gates').value = f ? (f.gates || '') : '';
+  document.getElementById('f-aircraft-stand').value = f ? (f.aircraftStand || '') : '';
   if (!f) suggestTaskTimes();
 
   document.getElementById('overlay').classList.add('open');
